@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Plataforma de Cursos Online
 
-## Getting Started
+Uma plataforma educacional completa desenvolvida com Next.js e Prisma, inspirada no design do [Luma](https://luma.humatheme.com/Demos/Fixed_Layout/index.html).
 
-First, run the development server:
+## Funcionalidades
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Sistema de Autenticação**: Registro, login e recuperação de senha
+- **Cursos Online**: Criação, visualização e gerenciamento de cursos
+- **Dashboard de Aluno**: Acompanhamento de progresso, certificados e tarefas
+- **Dashboard de Professor**: Gerenciamento de cursos, alunos e conteúdo
+- **Blog**: Publicação e gerenciamento de artigos
+- **E-commerce**: Venda de produtos educacionais
+- **Gerenciamento de Tarefas**: Criação e acompanhamento de tarefas
+- **Gerenciamento de Projetos**: Organização de projetos e equipes
+
+## Tecnologias Utilizadas
+
+- **Frontend**: Next.js, React, TailwindCSS
+- **Backend**: Next.js API Routes
+- **Banco de Dados**: PostgreSQL com Prisma ORM (via Docker)
+- **Autenticação**: NextAuth.js
+- **Validação**: Zod
+- **Formulários**: React Hook Form
+- **Requisições HTTP**: Axios
+- **Containerização**: Docker e Docker Compose
+
+## Estrutura do Projeto
+
+```
+src/
+├── app/
+│   ├── (auth)/           # Rotas de autenticação
+│   ├── (dashboard)/      # Rotas do dashboard
+│   ├── (marketing)/      # Rotas públicas
+│   ├── api/              # API Routes
+│   └── ...
+├── components/
+│   ├── ui/               # Componentes de UI
+│   ├── forms/            # Componentes de formulários
+│   └── ...
+├── lib/
+│   ├── prisma/           # Cliente Prisma
+│   └── ...
+├── hooks/                # Custom hooks
+└── ...
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Modelos de Dados
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **User**: Usuários do sistema (alunos, professores, administradores)
+- **Course**: Cursos disponíveis na plataforma
+- **Chapter**: Capítulos/aulas de cada curso
+- **Enrollment**: Matrículas dos alunos nos cursos
+- **Progress**: Progresso dos alunos em cada capítulo
+- **Review**: Avaliações dos cursos
+- **Post**: Artigos do blog
+- **Comment**: Comentários nos artigos
+- **Product**: Produtos para venda
+- **Order**: Pedidos de compra
+- **Task**: Tarefas
+- **Project**: Projetos
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Instalação e Execução
 
-## Learn More
+### Pré-requisitos
 
-To learn more about Next.js, take a look at the following resources:
+- Node.js (v18+)
+- Docker e Docker Compose
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Configuração
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Clone o repositório:
+   ```bash
+   git clone https://github.com/seu-usuario/plataforma-de-curso.git
+   cd plataforma-de-curso
+   ```
 
-## Deploy on Vercel
+2. Instale as dependências:
+   ```bash
+   npm install
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3. Configure as variáveis de ambiente:
+   - Copie o arquivo `.env.example` para `.env`
+   - Preencha as variáveis necessárias
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4. Inicie o banco de dados PostgreSQL com Docker:
+   ```bash
+   npm run db:start
+   ```
+
+5. Configure o banco de dados:
+   ```bash
+   npm run db:migrate
+   ```
+
+6. Inicie o servidor de desenvolvimento:
+   ```bash
+   npm run dev
+   ```
+
+7. Acesse a aplicação em `http://localhost:3000`
+
+### Gerenciamento do Banco de Dados
+
+Para mais detalhes sobre como gerenciar o banco de dados PostgreSQL com Docker, consulte o arquivo [DATABASE.md](DATABASE.md).
+
+## Licença
+
+Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para mais detalhes.
