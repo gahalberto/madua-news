@@ -87,7 +87,7 @@ export default function RootLayout({
   const isDevelopment = process.env.NODE_ENV === 'development';
   
   return (
-    <html lang="pt-BR" dir="ltr">
+    <html lang="pt-BR" dir="ltr" data-theme="light" className="light">
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
@@ -100,6 +100,25 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="color-scheme" content="light" />
+        
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Forçar o tema claro e impedir que o navegador use o tema escuro
+              document.documentElement.style.colorScheme = 'light';
+              
+              // Impedir que o navegador detecte "prefers-color-scheme: dark"
+              const originalMatchMedia = window.matchMedia;
+              window.matchMedia = function(query) {
+                if (query.includes('prefers-color-scheme: dark')) {
+                  return { matches: false, addEventListener: () => {}, removeEventListener: () => {} };
+                }
+                return originalMatchMedia(query);
+              };
+            `
+          }}
+        />
         
         {/* Em ambiente de desenvolvimento, carregamos o script do OneSignal via nosso proxy */}
         {isDevelopment && (
@@ -127,7 +146,13 @@ export default function RootLayout({
           </>
         )}
       </head>
-      <body className={inter.className}>
+      <body 
+        className={inter.className}
+        style={{ 
+          backgroundColor: "#ffffff", 
+          color: "#171717" 
+        }}
+      >
         <AuthProvider>
           <CartProvider>
             <MainNavbar />
