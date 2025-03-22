@@ -224,7 +224,7 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
       logDebug("Enviando post para API", { postDataLength: JSON.stringify(postData).length });
       
       const response = await fetch(`/api/posts/${id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
