@@ -204,27 +204,27 @@ model Review {
 
 // Modelo de post para o blog
 model Post {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
   title           String
-  content         String   @db.Text
-  excerpt         String?  @db.Text
-  slug            String?  @unique
+  slug            String?   @unique
   imageUrl        String?
-  published       Boolean  @default(false)
-  authorId        String
   categoryId      String?
   metaTitle       String?
-  metaDescription String?  @db.Text
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relações
-  author   User      @relation(fields: [authorId], references: [id])
-  category Category? @relation(fields: [categoryId], references: [id])
-  comments Comment[]
-  
-  // Nova relação com ScrapedArticle
+  metaDescription String?
+  content         String
+  excerpt         String?
+  published       Boolean   @default(false)
+  views           Int       @default(0)
+  authorId        String
+  author          User      @relation(fields: [authorId], references: [id])
+  category        Category? @relation(fields: [categoryId], references: [id])
+  comments        Comment[]
   scrapedArticles ScrapedArticle[]
+
+  @@index([authorId])
+  @@index([categoryId])
 }
 
 // Modelo de comentário
