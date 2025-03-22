@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma/client";
 import { CommentForm } from "./CommentForm";
+import { SocialShare } from '@/components/SocialShare';
 
 // Buscar post pelo ID
 async function getBlogPost(slug: string) {
@@ -143,6 +144,10 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
     notFound();
   }
   
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://madua.com.br'
+  const shareUrl = `${baseUrl}/noticias/${post.slug}`
+  const shareTitle = post.title
+  
   return (
     <article className="max-w-4xl mx-auto px-4 py-12">
       {/* Breadcrumbs para SEO */}
@@ -175,15 +180,15 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         <div className="flex items-center text-sm text-gray-500 mb-6">
           <div className="flex items-center mr-6">
             {post.author?.image ? (
-            <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
-              <Image 
+              <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
+                <Image 
                   src={post.author.image} 
                   alt={post.author.name || "Autor"}
-                width={40}
-                height={40}
-                className="object-cover"
-              />
-            </div>
+                  width={40}
+                  height={40}
+                  className="object-cover"
+                />
+              </div>
             ) : (
               <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white mr-3">
                 {post.author?.name?.charAt(0) || "A"}
@@ -216,17 +221,22 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         
         {/* Imagem de Destaque */}
         {post.imageUrl && (
-        <div className="relative w-full h-96 rounded-lg overflow-hidden mb-8">
-          <Image
-            src={post.imageUrl}
-            alt={post.title}
-            fill
-            priority
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
-        </div>
+          <div className="relative w-full h-96 rounded-lg overflow-hidden mb-4">
+            <Image
+              src={post.imageUrl}
+              alt={post.title}
+              fill
+              priority
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          </div>
         )}
+
+        {/* Botões de Compartilhamento */}
+        <div className="flex justify-center mb-8">
+          <SocialShare url={shareUrl} title={shareTitle} />
+        </div>
       </header>
       
       {/* Conteúdo do Post */}
@@ -273,8 +283,8 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                     </div>
                     <p className="mt-1 text-gray-700">{comment.content}</p>
                   </div>
-        </div>
-      </div>
+                </div>
+              </div>
             ))}
           </div>
         ) : (
