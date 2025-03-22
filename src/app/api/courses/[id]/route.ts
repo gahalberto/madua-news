@@ -180,7 +180,7 @@ export async function PATCH(
     } = body;
 
     // Preparar os dados para atualização
-    const updateData: Record<string, any> = {};
+    const updateData: Record<string, unknown> = {};
 
     // Atualizar o slug apenas se o título for alterado
     if (title !== undefined && title !== existingCourse.title) {
@@ -213,7 +213,13 @@ export async function PATCH(
 
     return NextResponse.json(updatedCourse);
   } catch (error) {
-    console.error("[COURSE_PATCH]", error);
+    if (error instanceof Error) {
+      console.error("[COURSE_PATCH]", error);
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }

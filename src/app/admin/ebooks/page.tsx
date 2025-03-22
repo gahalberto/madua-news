@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import Image from "next/image";
@@ -34,9 +34,10 @@ export default function AdminEbooksPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentFilter, setCurrentFilter] = useState("all");
+  const [isMounted, setIsMounted] = useState(false);
 
   // Função para buscar os ebooks do banco de dados
-  const fetchEbooks = async () => {
+  const fetchEbooks = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -71,11 +72,14 @@ export default function AdminEbooksPage() {
       toast.error("Erro ao carregar ebooks");
       setLoading(false);
     }
-  };
+  }, [searchTerm, currentFilter]);
 
   useEffect(() => {
-    fetchEbooks();
-  }, []);
+    setIsMounted(true);
+    if (isMounted) {
+      fetchEbooks();
+    }
+  }, [isMounted, fetchEbooks]);
 
   // Função para lidar com a mudança na busca
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {

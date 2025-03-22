@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, ChangeEvent } from "react";
+import { useState, useRef, useEffect, ChangeEvent, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import Image from "next/image";
@@ -35,66 +35,43 @@ export default function EditEbookPage({ params }: { params: { id: string } }) {
     isPublished: false
   });
 
-  // Função para buscar os dados do e-book
-  const fetchEbookData = async () => {
+  const fetchEbookData = useCallback(async () => {
     try {
       setLoading(true);
-      
-      // Fazer a requisição à API
       const response = await fetch(`/api/ebooks/${params.id}`);
-      
       if (!response.ok) {
-        throw new Error('Erro ao buscar dados do e-book');
+        throw new Error("Falha ao carregar e-book");
       }
-      
-      const ebook = await response.json();
-      
-      // Formatar a data para o formato esperado pelo input date
-      const formattedDate = ebook.publicationDate 
-        ? new Date(ebook.publicationDate).toISOString().split('T')[0] 
-        : "";
-      
-      // Preencher o formulário com os dados do e-book
+      const data = await response.json();
       setFormData({
-        title: ebook.title,
-        description: ebook.description,
-        price: ebook.price.toString(),
-        promotionalPrice: ebook.promotionalPrice?.toString() || "",
-        author: ebook.author || "",
-        publisher: ebook.publisher || "",
-        isbn: ebook.isbn || "",
-        language: ebook.language || "Português",
-        pages: ebook.pages?.toString() || "",
-        format: ebook.format || "PDF",
-        publicationDate: formattedDate,
-        featured: ebook.featured,
-        isPublished: ebook.isPublished
+        title: data.title,
+        description: data.description,
+        price: data.price.toString(),
+        promotionalPrice: data.promotionalPrice?.toString() || "",
+        author: data.author || "",
+        publisher: data.publisher || "",
+        isbn: data.isbn || "",
+        language: data.language || "Português",
+        pages: data.pages?.toString() || "",
+        format: data.format || "PDF",
+        publicationDate: data.publicationDate ? new Date(data.publicationDate).toISOString().split('T')[0] : "",
+        featured: data.featured,
+        isPublished: data.isPublished
       });
-      
-      // Definir a URL da capa para preview
-      if (ebook.coverImageUrl) {
-        setCoverPreview(ebook.coverImageUrl);
-      }
-      
-      // Armazenar a URL do arquivo atual
-      if (ebook.fileUrl) {
-        setCurrentFileUrl(ebook.fileUrl);
-        // Extrair o nome do arquivo da URL
-        const fileName = ebook.fileUrl.split('/').pop();
-        setCurrentFileName(fileName);
-      }
-      
-      setLoading(false);
+      setCoverPreview(data.coverImageUrl);
+      setCurrentFileUrl(data.fileUrl);
+      setCurrentFileName(data.fileUrl?.split("/").pop());
     } catch (error) {
-      console.error("Erro ao buscar dados do e-book:", error);
-      toast.error("Erro ao carregar dados do e-book");
+      console.error("Erro ao buscar e-book:", error);
+      toast.error("Erro ao carregar e-book");
+    } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
 
   useEffect(() => {
     fetchEbookData();
-  }, [params.id]);
+  }, [fetchEbookData]);
 
   // Função para lidar com a mudança nos campos do formulário
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

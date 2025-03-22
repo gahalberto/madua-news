@@ -18,11 +18,11 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Obter o tipo de arquivo (cover ou file)
+    // Obter o tipo de arquivo (cover, file ou blog)
     const url = new URL(req.url);
     const fileType = url.searchParams.get("type");
     
-    if (!fileType || (fileType !== "cover" && fileType !== "file")) {
+    if (!fileType || (fileType !== "cover" && fileType !== "file" && fileType !== "blog")) {
       return NextResponse.json(
         { error: "Tipo de arquivo inválido" },
         { status: 400 }
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     }
     
     // Verificar o tipo de arquivo
-    if (fileType === "cover" && !file.type.startsWith("image/")) {
+    if ((fileType === "cover" || fileType === "blog") && !file.type.startsWith("image/")) {
       return NextResponse.json(
         { error: "O arquivo deve ser uma imagem" },
         { status: 400 }
@@ -60,7 +60,11 @@ export async function POST(req: NextRequest) {
     const fileName = `${uuidv4()}.${fileExtension}`;
     
     // Definir o diretório de destino
-    const directory = fileType === "cover" ? "covers" : "ebooks";
+    let directory = "uploads";
+    if (fileType === "cover") directory = "covers";
+    else if (fileType === "file") directory = "ebooks";
+    else if (fileType === "blog") directory = "blog-images";
+    
     const publicDir = join(process.cwd(), "public", directory);
     
     // Ler o conteúdo do arquivo
@@ -69,12 +73,21 @@ export async function POST(req: NextRequest) {
     
     // Salvar o arquivo
     const filePath = join(publicDir, fileName);
-    await writeFile(filePath, buffer);
+    
+    try {
+      await writeFile(filePath, buffer);
+    } catch (fileError) {
+      console.error("Erro ao salvar arquivo:", fileError);
+      return NextResponse.json(
+        { error: "Erro ao salvar o arquivo no servidor. Verifique se o diretório existe." },
+        { status: 500 }
+      );
+    }
     
     // Retornar o caminho do arquivo
     const fileUrl = `/${directory}/${fileName}`;
     
-    return NextResponse.json({ fileUrl });
+    return NextResponse.json({ url: fileUrl });
   } catch (error) {
     console.error("Erro ao fazer upload do arquivo:", error);
     return NextResponse.json(

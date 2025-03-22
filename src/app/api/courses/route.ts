@@ -189,7 +189,7 @@ export async function POST(req: Request) {
 }
 
 // PUT /api/courses/update-slugs - Atualizar slugs de todos os cursos
-export async function PUT(req: Request) {
+export async function PUT() {
   try {
     const session = await getServerSession(authOptions);
 

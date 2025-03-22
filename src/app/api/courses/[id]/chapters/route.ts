@@ -3,6 +3,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
+interface ChapterFile {
+  name: string;
+  url: string;
+  size: number;
+  type: string;
+  description: string;
+}
+
 // GET /api/courses/[id]/chapters - Listar todas as aulas de um curso
 export async function GET(
   req: NextRequest,
@@ -123,7 +131,7 @@ export async function POST(
     // Adicionar arquivos para download, se houver
     if (downloadFiles.length > 0) {
       await Promise.all(
-        downloadFiles.map((file: any) =>
+        downloadFiles.map((file: ChapterFile) =>
           prisma.chapterFile.create({
             data: {
               name: file.name,

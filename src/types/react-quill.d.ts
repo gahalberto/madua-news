@@ -3,25 +3,23 @@ declare module 'react-quill' {
   
   export interface QuillToolbar {
     container?: string | string[] | Array<Array<string | object>>;
-    handlers?: Record<string, Function>;
+    handlers?: Record<string, (value: unknown) => void>;
   }
   
   export interface QuillModules {
     toolbar?: boolean | string | string[] | QuillToolbar | Array<Array<string | object>>;
-    [key: string]: any; // Outros módulos que podem ser adicionados
+    [key: string]: unknown; // Outros módulos que podem ser adicionados
   }
   
-  export interface ReactQuillProps {
-    theme?: string;
-    value?: string;
-    onChange?: (value: string) => void;
-    className?: string;
+  interface ReactQuillProps {
+    value: string;
+    onChange: (value: string) => void;
     modules?: QuillModules;
     formats?: string[];
-    [key: string]: unknown; // Propriedades adicionais
+    theme?: string;
+    readOnly?: boolean;
+    placeholder?: string;
   }
   
-  const ReactQuill: React.FC<ReactQuillProps>;
-  
-  export default ReactQuill;
+  export default class ReactQuill extends React.Component<ReactQuillProps> {}
 } 

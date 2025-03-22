@@ -169,6 +169,31 @@ export default function AdminLayout({
                 Blog
               </Link>
               <Link
+                href="/admin/scraped-articles"
+                className={`flex items-center px-4 py-2 rounded-lg ${
+                  isActive("/admin/scraped-articles")
+                    ? "bg-gray-700 text-white"
+                    : "text-gray-300 hover:bg-gray-700"
+                }`}
+                onClick={toggleSidebar}
+              >
+                <svg
+                  className="w-5 h-5 mr-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M8 16l2.879-2.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+                Artigos Extraídos
+              </Link>
+              <Link
                 href="/admin/produtos"
                 className={`flex items-center px-4 py-2 rounded-lg ${
                   isActive("/admin/produtos")
@@ -433,6 +458,31 @@ export default function AdminLayout({
                   ></path>
                 </svg>
                 Blog
+              </Link>
+              <Link
+                href="/admin/scraped-articles"
+                className={`flex items-center px-4 py-2 rounded-lg ${
+                  isActive("/admin/scraped-articles")
+                    ? "bg-gray-700 text-white"
+                    : "text-gray-300 hover:bg-gray-700"
+                }`}
+                onClick={toggleSidebar}
+              >
+                <svg
+                  className="w-5 h-5 mr-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M8 16l2.879-2.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+                Artigos Extraídos
               </Link>
               <Link
                 href="/admin/produtos"

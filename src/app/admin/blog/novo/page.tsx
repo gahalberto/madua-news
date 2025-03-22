@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
+import Image from "next/image";
 
 interface Tag {
   id: string;
@@ -441,9 +442,11 @@ export default function NewBlogPostPage() {
               >
                 {imagePreview ? (
                   <div className="relative w-full">
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
+                    <Image
+                      src={imagePreview}
+                      alt="Preview"
+                      width={200}
+                      height={150}
                       className="mx-auto max-h-64 object-contain"
                     />
                     <button

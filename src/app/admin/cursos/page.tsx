@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "react-hot-toast";
@@ -38,32 +38,15 @@ export default function AdminCoursesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPublished, setFilterPublished] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
-  useEffect(() => {
-    fetchCourses();
-  }, [filterPublished]);
-
-  const fetchCourses = async () => {
-    setIsLoading(true);
+  const fetchCourses = useCallback(async () => {
     try {
-      let url = "/api/courses";
-      
-      // Adicionar filtros à URL
-      const params = new URLSearchParams();
-      if (filterPublished !== null) {
-        params.append("published", filterPublished);
-      }
-      
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
-      
-      const response = await fetch(url);
-      
+      setIsLoading(true);
+      const response = await fetch("/api/courses");
       if (!response.ok) {
-        throw new Error("Erro ao buscar cursos");
+        throw new Error("Falha ao carregar cursos");
       }
-      
       const data = await response.json();
       setCourses(data);
     } catch (error) {
@@ -72,7 +55,14 @@ export default function AdminCoursesPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    setIsMounted(true);
+    if (isMounted) {
+      fetchCourses();
+    }
+  }, [isMounted, fetchCourses]);
 
   const handleDeleteCourse = async (courseId: string) => {
     if (!confirm("Tem certeza que deseja excluir este curso?")) {
@@ -85,15 +75,15 @@ export default function AdminCoursesPage() {
       });
       
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erro ao excluir curso");
+        const data = await response.json();
+        throw new Error(data.error || "Erro ao excluir curso");
       }
       
       toast.success("Curso excluído com sucesso!");
       fetchCourses();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro ao excluir curso:", error);
-      toast.error(error.message || "Erro ao excluir curso");
+      toast.error(error instanceof Error ? error.message : "Erro ao excluir curso");
     }
   };
 

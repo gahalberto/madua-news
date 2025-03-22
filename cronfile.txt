@@ -1,0 +1,9 @@
+# Crontab para automatizar a execução do web scraper
+# Para instalar, execute: crontab cronfile.txt
+
+# Define variáveis de ambiente
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Executa o scraper todos os dias às 18:00
+0 18 * * * cd /home/gabriel/projetos/course-dashboard && ./scraper_auto.sh >> /home/gabriel/projetos/course-dashboard/scraper.log 2>&1 

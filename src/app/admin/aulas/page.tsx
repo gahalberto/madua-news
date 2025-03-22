@@ -16,7 +16,13 @@ interface ApiCourse {
   id: string;
   title: string;
   createdAt: string;
-  [key: string]: unknown;
+  description?: string;
+  imageUrl?: string;
+  price?: number;
+  promotionalPrice?: number | null;
+  published?: boolean;
+  categoryId?: string;
+  teacherId?: string;
 }
 
 export default function AdminChaptersPage() {

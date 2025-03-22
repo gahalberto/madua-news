@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { FaSearch, FaFilter, FaStar, FaBook, FaArrowRight } from "react-icons/fa";
+import { toast } from "react-hot-toast";
 
 // Interface para o modelo Ebook
 interface Ebook {
@@ -19,17 +20,31 @@ interface Ebook {
   isPublished: boolean;
 }
 
+function SearchParamsProvider({ children }: { children: React.ReactNode }) {
+  const searchParams = useSearchParams();
+  return children;
+}
+
 export default function EbookCatalogPage() {
+  return (
+    <Suspense fallback={<div>Carregando...</div>}>
+      <EbookCatalogContent />
+    </Suspense>
+  );
+}
+
+function EbookCatalogContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [ebooks, setEbooks] = useState<Ebook[]>([]);
   const [featuredEbooks, setFeaturedEbooks] = useState<Ebook[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
-  const [currentFilter, setCurrentFilter] = useState(searchParams.get("filter") || "all");
+  const [activeFilter, setActiveFilter] = useState(searchParams.get("filter") || "all");
+  const [isMounted, setIsMounted] = useState(false);
 
   // Função para buscar os ebooks
-  const fetchEbooks = async () => {
+  const fetchEbooks = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -41,8 +56,8 @@ export default function EbookCatalogPage() {
         params.append('search', searchTerm);
       }
       
-      if (currentFilter !== 'all') {
-        params.append('filter', currentFilter);
+      if (activeFilter !== 'all') {
+        params.append('filter', activeFilter);
       }
       
       if (params.toString()) {
@@ -60,7 +75,7 @@ export default function EbookCatalogPage() {
       setEbooks(data);
 
       // Buscar ebooks em destaque se não estiver filtrando
-      if (currentFilter === 'all' && !searchTerm) {
+      if (activeFilter === 'all' && !searchTerm) {
         const featuredResponse = await fetch(`/api/ebooks/public?filter=featured`);
         if (featuredResponse.ok) {
           const featuredData = await featuredResponse.json();
@@ -73,13 +88,17 @@ export default function EbookCatalogPage() {
       setLoading(false);
     } catch (error) {
       console.error("Erro ao buscar ebooks:", error);
+      toast.error("Erro ao carregar e-books");
       setLoading(false);
     }
-  };
+  }, [searchTerm, activeFilter]);
 
   useEffect(() => {
-    fetchEbooks();
-  }, [searchTerm, currentFilter]);
+    setIsMounted(true);
+    if (isMounted) {
+      fetchEbooks();
+    }
+  }, [isMounted, fetchEbooks]);
 
   // Função para lidar com a mudança na busca
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,14 +113,14 @@ export default function EbookCatalogPage() {
     // Atualizar a URL com os parâmetros de busca
     const params = new URLSearchParams();
     if (searchTerm) params.append('search', searchTerm);
-    if (currentFilter !== 'all') params.append('filter', currentFilter);
+    if (activeFilter !== 'all') params.append('filter', activeFilter);
     
     router.push(`/ebooks${params.toString() ? `?${params.toString()}` : ''}`);
   };
 
   // Função para lidar com a mudança no filtro
   const handleFilterChange = (filter: string) => {
-    setCurrentFilter(filter);
+    setActiveFilter(filter);
     
     // Atualizar a URL com os parâmetros de filtro
     const params = new URLSearchParams();
@@ -157,15 +176,15 @@ export default function EbookCatalogPage() {
         <div className="mb-10 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-2xl font-bold text-gray-800">
             {searchTerm ? `Resultados para "${searchTerm}"` : 
-             currentFilter === 'featured' ? 'E-books em Destaque' :
-             currentFilter === 'free' ? 'E-books Gratuitos' :
-             currentFilter === 'paid' ? 'E-books Premium' : 'Todos os E-books'}
+             activeFilter === 'featured' ? 'E-books em Destaque' :
+             activeFilter === 'free' ? 'E-books Gratuitos' :
+             activeFilter === 'paid' ? 'E-books Premium' : 'Todos os E-books'}
           </div>
           <div className="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm">
             <FaFilter className="text-gray-400 ml-2" />
             <select
               className="bg-transparent border-0 text-gray-700 text-sm font-medium focus:ring-0 focus:outline-none pr-8"
-              value={currentFilter}
+              value={activeFilter}
               onChange={(e) => handleFilterChange(e.target.value)}
             >
               <option value="all">Todos</option>
@@ -260,7 +279,7 @@ export default function EbookCatalogPage() {
             <button
               onClick={() => {
                 setSearchTerm('');
-                setCurrentFilter('all');
+                setActiveFilter('all');
                 router.push('/ebooks');
               }}
               className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-lg inline-flex items-center transition-colors"

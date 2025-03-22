@@ -3,20 +3,14 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, ChevronDown, Search, User, BookOpen } from 'lucide-react';
-import CartButton from '@/app/_components/cart/CartButton';
+import { Menu, X } from 'lucide-react';
 
 const MainNavbar = () => {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
-  };
-
-  const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
   };
 
   const isActive = (path: string) => {
@@ -32,7 +26,7 @@ const MainNavbar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <span className="text-blue-600 font-bold text-2xl">Luma</span>
+            <span className="text-blue-600 font-bold text-2xl">Madua - Notícias de Israel</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -45,62 +39,13 @@ const MainNavbar = () => {
             >
               Home
             </Link>
-            <div className="relative">
-              <button 
-                onClick={toggleDropdown}
-                className={`flex items-center text-gray-700 hover:text-blue-600 font-medium ${
-                  isActive('/cursos') ? 'text-blue-600 border-b-2 border-blue-600' : ''
-                }`}
-              >
-                Cursos
-                <ChevronDown className="ml-1 h-4 w-4" />
-              </button>
-              {isDropdownOpen && (
-                <div className="absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
-                  <div className="py-1" role="menu" aria-orientation="vertical">
-                    <Link 
-                      href="/cursos" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Todos os Cursos
-                    </Link>
-                    <Link 
-                      href="/cursos/categoria/1" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Programação
-                    </Link>
-                    <Link 
-                      href="/cursos/categoria/2" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Design
-                    </Link>
-                    <Link 
-                      href="/cursos/categoria/3" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Marketing
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
             <Link 
-              href="/ebooks" 
+              href="/noticias" 
               className={`flex items-center text-gray-700 hover:text-blue-600 font-medium ${
-                isActive('/ebooks') ? 'text-blue-600 border-b-2 border-blue-600' : ''
+                isActive('/noticias') ? 'text-blue-600 border-b-2 border-blue-600' : ''
               }`}
             >
-              <BookOpen className="mr-1 h-4 w-4" /> E-books
-            </Link>
-            <Link 
-              href="/blog" 
-              className={`flex items-center text-gray-700 hover:text-blue-600 font-medium ${
-                isActive('/blog') ? 'text-blue-600 border-b-2 border-blue-600' : ''
-              }`}
-            >
-              Blog
+              Notícias
             </Link>
             <Link 
               href="/sobre" 
@@ -119,22 +64,6 @@ const MainNavbar = () => {
               Contato
             </Link>
           </nav>
-
-          {/* Right Side Icons */}
-          <div className="hidden md:flex items-center space-x-4">
-            <button className="text-gray-700 hover:text-blue-600">
-              <Search className="h-5 w-5" />
-            </button>
-            <CartButton />
-            <Link 
-              href="/login" 
-              className={`flex items-center text-gray-700 hover:text-blue-600 ${
-                isActive('/login') || isActive('/dashboard') ? 'text-blue-600' : ''
-              }`}
-            >
-              <User className="h-5 w-5" />
-            </Link>
-          </div>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden">
@@ -167,31 +96,13 @@ const MainNavbar = () => {
                 Home
               </Link>
               <Link 
-                href="/cursos" 
+                href="/noticias" 
                 className={`py-2 text-gray-700 hover:text-blue-600 font-medium ${
-                  isActive('/cursos') ? 'text-blue-600 font-bold' : ''
+                  isActive('/noticias') ? 'text-blue-600 font-bold' : ''
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                Cursos
-              </Link>
-              <Link 
-                href="/ebooks" 
-                className={`py-2 text-gray-700 hover:text-blue-600 font-medium flex items-center ${
-                  isActive('/ebooks') ? 'text-blue-600 font-bold' : ''
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <BookOpen className="mr-1 h-4 w-4" /> E-books
-              </Link>
-              <Link 
-                href="/blog" 
-                className={`py-2 text-gray-700 hover:text-blue-600 font-medium ${
-                  isActive('/blog') ? 'text-blue-600 font-bold' : ''
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Blog
+                Notícias
               </Link>
               <Link 
                 href="/sobre" 
@@ -211,17 +122,6 @@ const MainNavbar = () => {
               >
                 Contato
               </Link>
-              <div className="flex items-center space-x-4 py-2">
-                <CartButton />
-                <Link 
-                  href="/login" 
-                  className={`text-gray-700 hover:text-blue-600 ${
-                    isActive('/login') || isActive('/dashboard') ? 'text-blue-600' : ''
-                  }`}
-                >
-                  <User className="h-5 w-5" />
-                </Link>
-              </div>
             </nav>
           </div>
         </div>

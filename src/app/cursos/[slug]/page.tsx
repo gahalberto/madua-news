@@ -1,5 +1,3 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import CourseClientComponent from "@/app/_components/courses/CourseClientComponent";
 import Link from 'next/link';
@@ -8,18 +6,24 @@ import { Star, StarHalf, Clock, Play, CheckCircle, Users, BookOpen, Award, Video
 import { notFound } from 'next/navigation';
 import prisma from "@/lib/prisma";
 import EnrollButton from "@/app/_components/courses/EnrollButton";
+import { Metadata } from 'next';
 
 // Interfaces para tipagem
 interface Chapter {
   id: string;
   title: string;
-  description?: string;
-  videoUrl?: string;
+  description?: string | null;
+  videoUrl?: string | null;
   position: number;
   isPublished: boolean;
   contentType: string;
   duration: number;
   isPreview: boolean;
+  youtubeVideoId?: string | null;
+  content?: string | null;
+  courseId?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 interface Course {
@@ -29,7 +33,31 @@ interface Course {
   price: number | null;
   promotionalPrice: number | null;
   imageUrl: string | null;
-  // Adicione outros campos conforme necessário
+  slug: string | null;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  isPublished: boolean;
+  duration?: number;
+  hasCertificate?: boolean;
+  learningPoints?: string[];
+  categoryId?: string | null;
+  category?: {
+    id: string;
+    name: string;
+  } | null;
+  teacher?: {
+    id: string;
+    name: string;
+    image: string | null;
+    bio?: string;
+  } | null;
+  _count?: {
+    chapters: number;
+    enrollments: number;
+    reviews?: number;
+  };
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 // Funções para buscar dados
@@ -106,19 +134,57 @@ async function getFirstPreviewChapter(courseId: string) {
   }
 }
 
-export default async function CourseDetailPage({ params }: { params: { slug: string } }) {
-  const session = await getServerSession(authOptions);
-  const course = await getCourse(params.slug);
+// Gerar metadados para SEO
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  const slug = params.slug;
+  const courseData = await getCourse(slug);
   
-  if (!course) {
+  if (!courseData) {
+    return {
+      title: 'Curso não encontrado',
+      description: 'O curso que você está procurando não existe ou foi removido.'
+    };
+  }
+  
+  return {
+    title: `${courseData.title} | Curso Online`,
+    description: courseData.metaDescription || courseData.description.substring(0, 160),
+    openGraph: {
+      title: courseData.title,
+      description: courseData.metaDescription || courseData.description.substring(0, 160),
+      images: courseData.imageUrl ? [{ url: courseData.imageUrl }] : undefined
+    }
+  };
+}
+
+export default async function CoursePage({
+  params,
+}: {
+  params: { 
+    slug: string;
+    session?: {
+      user?: {
+        id: string;
+      }
+    } 
+  };
+}) {
+  const slug = params.slug;
+  const courseData = await getCourse(slug);
+  
+  if (!courseData) {
     notFound();
   }
   
-  const chapters = await getCourseChapters(course.id);
-  const userEnrolled = session?.user?.id 
-    ? await isEnrolled(session.user.id, course.id) 
+  const chapters = await getCourseChapters(courseData.id);
+  const userEnrolled = params.session?.user?.id 
+    ? await isEnrolled(params.session.user.id, courseData.id) 
     : false;
-  const firstPreviewChapter = await getFirstPreviewChapter(course.id);
+  const firstPreviewChapter = await getFirstPreviewChapter(courseData.id);
   
   // Função para formatar preço
   const formatPrice = (price: number | null, promotionalPrice: number | null) => {
@@ -175,18 +241,18 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
                   Cursos
                 </Link>
                 <span className="mx-2">›</span>
-                {course.category && (
+                {courseData.category && (
                   <>
-                    <Link href={`/cursos/categoria/${course.category.id}`} className="text-blue-200 hover:text-white">
-                      {course.category.name}
+                    <Link href={`/cursos/categoria/${courseData.category.id}`} className="text-blue-200 hover:text-white">
+                      {courseData.category.name}
                     </Link>
                     <span className="mx-2">›</span>
                   </>
                 )}
-                <span className="text-white">{course.title}</span>
+                <span className="text-white">{courseData.title}</span>
               </div>
               
-              <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
+              <h1 className="text-4xl font-bold mb-4">{courseData.title}</h1>
               
               <div className="flex items-center mb-6">
                 <div className="flex items-center mr-4">
@@ -195,7 +261,7 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
                 </div>
                 <div className="flex items-center mr-4">
                   <Users className="h-5 w-5 mr-1" />
-                  <span>{course._count?.enrollments || 0} alunos</span>
+                  <span>{courseData._count?.enrollments || 0} alunos</span>
                 </div>
                 <div className="flex items-center">
                   <Clock className="h-5 w-5 mr-1" />
@@ -204,30 +270,30 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
               </div>
               
               <p className="text-lg mb-6">
-                {course.metaDescription || course.description.substring(0, 160)}
+                {courseData.metaDescription || courseData.description.substring(0, 160)}
               </p>
               
               <div className="flex items-center">
                 <div className="flex-shrink-0 mr-3">
                   <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center">
-                    {course.teacher?.image ? (
+                    {courseData.teacher?.image ? (
                       <Image
-                        src={course.teacher.image}
-                        alt={course.teacher.name || 'Professor'}
+                        src={courseData.teacher.image}
+                        alt={courseData.teacher.name || 'Professor'}
                         width={48}
                         height={48}
                         className="rounded-full"
                       />
                     ) : (
                       <span className="text-white font-bold">
-                        {course.teacher?.name?.substring(0, 2).toUpperCase() || 'P'}
+                        {courseData.teacher?.name?.substring(0, 2).toUpperCase() || 'P'}
                       </span>
                     )}
                   </div>
                 </div>
                 <div>
                   <p className="text-sm text-blue-200">Criado por</p>
-                  <p className="font-medium">{course.teacher?.name || 'Professor'}</p>
+                  <p className="font-medium">{courseData.teacher?.name || 'Professor'}</p>
                 </div>
               </div>
             </div>
@@ -235,16 +301,16 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
             <div className="md:w-1/3">
               <div className="bg-white rounded-lg shadow-lg p-6 text-gray-800">
                 <div className="relative h-48 mb-4 rounded-lg overflow-hidden">
-                  {course.imageUrl ? (
+                  {courseData.imageUrl ? (
                     <Image
-                      src={course.imageUrl}
-                      alt={course.title}
+                      src={courseData.imageUrl}
+                      alt={courseData.title}
                       fill
                       className="object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-blue-100">
-                      <span className="text-blue-500 font-bold text-3xl">{course.title.substring(0, 2).toUpperCase()}</span>
+                      <span className="text-blue-500 font-bold text-3xl">{courseData.title.substring(0, 2).toUpperCase()}</span>
                     </div>
                   )}
                   <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
@@ -255,12 +321,12 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
                 </div>
                 
                 <div className="mb-6">
-                  {formatPrice(course.price, course.promotionalPrice)}
+                  {formatPrice(courseData.price, courseData.promotionalPrice)}
                 </div>
                 
                 {userEnrolled ? (
                   <Link 
-                    href={`/cursos/${params.slug}/aulas/${chapters[0]?.id || ''}`}
+                    href={`/cursos/${slug}/aulas/${chapters[0]?.id || ''}`}
                     className="w-full py-3 bg-green-600 text-white rounded-md font-bold mb-4 hover:bg-green-700 transition-colors flex items-center justify-center"
                   >
                     <Play className="h-5 w-5 mr-2" />
@@ -268,18 +334,18 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
                   </Link>
                 ) : (
                   <EnrollButton
-                    courseId={course.id}
-                    courseTitle={course.title}
-                    coursePrice={course.price}
-                    coursePromotionalPrice={course.promotionalPrice}
-                    courseImage={course.imageUrl}
+                    courseId={courseData.id}
+                    courseTitle={courseData.title}
+                    coursePrice={courseData.price}
+                    coursePromotionalPrice={courseData.promotionalPrice}
+                    courseImage={courseData.imageUrl}
                     className="w-full py-3"
                   />
                 )}
                 
                 {firstPreviewChapter && !userEnrolled && (
                   <Link
-                    href={`/cursos/${params.slug}/aulas/${firstPreviewChapter.id}`}
+                    href={`/cursos/${slug}/aulas/${firstPreviewChapter.id}`}
                     className="w-full py-3 border border-blue-600 text-blue-600 rounded-md font-bold hover:bg-blue-50 transition-colors flex items-center justify-center"
                   >
                     <Play className="h-5 w-5 mr-2" />
@@ -292,7 +358,7 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
                     <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
                     Acesso vitalício
                   </p>
-                  {course.hasCertificate && (
+                  {courseData.hasCertificate && (
                     <p className="mb-2 flex items-center">
                       <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
                       Certificado de conclusão
@@ -316,16 +382,16 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
             <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
               <h2 className="text-2xl font-bold mb-6">Sobre este curso</h2>
               <div className="prose max-w-none">
-                <p className="mb-4">{course.description}</p>
+                <p className="mb-4">{courseData.description}</p>
               </div>
             </div>
 
             {/* Pontos de aprendizado */}
-            {course.learningPoints && course.learningPoints.length > 0 && (
+            {courseData.learningPoints && courseData.learningPoints.length > 0 && (
               <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
                 <h2 className="text-2xl font-bold mb-6">O que você vai aprender</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {course.learningPoints.map((point: string, index: number) => (
+                  {courseData.learningPoints.map((point: string, index: number) => (
                     <div key={index} className="flex items-start">
                       <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
                       <span>{point}</span>
@@ -359,7 +425,7 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
                           
                           {chapter.isPreview ? (
                             <Link 
-                              href={`/cursos/${params.slug}/aulas/${chapter.id}`}
+                              href={`/cursos/${slug}/aulas/${chapter.id}`}
                               className="flex items-center text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full"
                             >
                               <Play className="h-3 w-3 mr-1" />
@@ -390,25 +456,25 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
               <div className="flex items-start">
                 <div className="flex-shrink-0 mr-4">
                   <div className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center">
-                    {course.teacher?.image ? (
+                    {courseData.teacher?.image ? (
                       <Image
-                        src={course.teacher.image}
-                        alt={course.teacher.name || 'Professor'}
+                        src={courseData.teacher.image}
+                        alt={courseData.teacher.name || 'Professor'}
                         width={64}
                         height={64}
                         className="rounded-full"
                       />
                     ) : (
                       <span className="text-white font-bold text-xl">
-                        {course.teacher?.name?.substring(0, 2).toUpperCase() || 'P'}
+                        {courseData.teacher?.name?.substring(0, 2).toUpperCase() || 'P'}
                       </span>
                     )}
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">{course.teacher?.name || 'Professor'}</h3>
+                  <h3 className="text-lg font-semibold mb-2">{courseData.teacher?.name || 'Professor'}</h3>
                   <p className="text-gray-600">
-                    {course.teacher?.bio || 'Informações sobre o professor não disponíveis.'}
+                    {courseData.teacher?.bio || 'Informações sobre o professor não disponíveis.'}
                   </p>
                 </div>
               </div>
@@ -424,7 +490,7 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
                   <div>
                     <p className="font-medium">Duração</p>
                     <p className="text-sm text-gray-600">
-                      {course.duration ? `${course.duration} minutos` : "Duração não especificada"}
+                      {courseData.duration ? `${courseData.duration} minutos` : "Duração não especificada"}
                     </p>
                   </div>
                 </div>
@@ -439,7 +505,7 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
                   <Users className="h-5 w-5 text-gray-500 mr-3" />
                   <div>
                     <p className="font-medium">Alunos</p>
-                    <p className="text-sm text-gray-600">{course._count?.enrollments || 0} matriculados</p>
+                    <p className="text-sm text-gray-600">{courseData._count?.enrollments || 0} matriculados</p>
                   </div>
                 </div>
                 <div className="flex items-center">
@@ -447,7 +513,7 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
                   <div>
                     <p className="font-medium">Certificado</p>
                     <p className="text-sm text-gray-600">
-                      {course.hasCertificate 
+                      {courseData.hasCertificate 
                         ? "Certificado incluso ao concluir o curso" 
                         : "Este curso não oferece certificado"}
                     </p>
@@ -487,8 +553,8 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
 
       {/* Componente cliente para interatividade */}
       <CourseClientComponent 
-        course={course} 
-        session={session}
+        course={courseData} 
+        session={params.session}
       />
     </div>
   );

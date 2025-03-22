@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
       OR?: Array<{[key: string]: {[key: string]: string, mode: string}}>;
       isPublished: boolean;
       featured?: boolean;
-      price?: any;
+      price?: {gt?: number} | number;
     } = {
       // Apenas e-books publicados
       isPublished: true
@@ -65,9 +65,15 @@ export async function GET(req: NextRequest) {
     
     return NextResponse.json(ebooks);
   } catch (error) {
-    console.error("Erro ao buscar e-books:", error);
+    if (error instanceof Error) {
+      console.error("[EBOOKS_PUBLIC_GET]", error);
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
     return NextResponse.json(
-      { error: "Erro ao buscar e-books" },
+      { error: "Erro interno do servidor" },
       { status: 500 }
     );
   }

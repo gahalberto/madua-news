@@ -1,110 +1,144 @@
-# Plataforma de Cursos Online
+# Web Scraper Ynet News
 
-Uma plataforma educacional completa desenvolvida com Next.js e Prisma, inspirada no design do [Luma](https://luma.humatheme.com/Demos/Fixed_Layout/index.html).
+Este é um script Python para fazer web scraping de artigos do [Ynet News](https://www.ynetnews.com/category/3082).
 
 ## Funcionalidades
 
-- **Sistema de Autenticação**: Registro, login e recuperação de senha
-- **Cursos Online**: Criação, visualização e gerenciamento de cursos
-- **Dashboard de Aluno**: Acompanhamento de progresso, certificados e tarefas
-- **Dashboard de Professor**: Gerenciamento de cursos, alunos e conteúdo
-- **Blog**: Publicação e gerenciamento de artigos
-- **E-commerce**: Venda de produtos educacionais
-- **Gerenciamento de Tarefas**: Criação e acompanhamento de tarefas
-- **Gerenciamento de Projetos**: Organização de projetos e equipes
+- Extrai links de artigos recentes da página principal da categoria
+- Extrai título, descrição e conteúdo de cada artigo
+- Salva os resultados em um arquivo JSON
+- Envia os artigos automaticamente para a API
+- Suporte a execução programada via cron
 
-## Tecnologias Utilizadas
+## Requisitos
 
-- **Frontend**: Next.js, React, TailwindCSS
-- **Backend**: Next.js API Routes
-- **Banco de Dados**: PostgreSQL com Prisma ORM (via Docker)
-- **Autenticação**: NextAuth.js
-- **Validação**: Zod
-- **Formulários**: React Hook Form
-- **Requisições HTTP**: Axios
-- **Containerização**: Docker e Docker Compose
-
-## Estrutura do Projeto
+Para executar este script, você precisa:
 
 ```
-src/
-├── app/
-│   ├── (auth)/           # Rotas de autenticação
-│   ├── (dashboard)/      # Rotas do dashboard
-│   ├── (marketing)/      # Rotas públicas
-│   ├── api/              # API Routes
-│   └── ...
-├── components/
-│   ├── ui/               # Componentes de UI
-│   ├── forms/            # Componentes de formulários
-│   └── ...
-├── lib/
-│   ├── prisma/           # Cliente Prisma
-│   └── ...
-├── hooks/                # Custom hooks
-└── ...
+python3
+python3-venv (para ambientes virtuais Python)
 ```
 
-## Modelos de Dados
+E as seguintes bibliotecas Python (instaladas automaticamente pelo script):
 
-- **User**: Usuários do sistema (alunos, professores, administradores)
-- **Course**: Cursos disponíveis na plataforma
-- **Chapter**: Capítulos/aulas de cada curso
-- **Enrollment**: Matrículas dos alunos nos cursos
-- **Progress**: Progresso dos alunos em cada capítulo
-- **Review**: Avaliações dos cursos
-- **Post**: Artigos do blog
-- **Comment**: Comentários nos artigos
-- **Product**: Produtos para venda
-- **Order**: Pedidos de compra
-- **Task**: Tarefas
-- **Project**: Projetos
+```
+requests
+beautifulsoup4
+```
 
-## Instalação e Execução
+## Instalação
 
-### Pré-requisitos
+### Método 1: Usando o Script Automatizado (Recomendado)
 
-- Node.js (v18+)
-- Docker e Docker Compose
+O script `scraper.sh` configura automaticamente um ambiente virtual Python e instala todas as dependências necessárias:
 
-### Configuração
+```bash
+# Torne o script executável
+chmod +x scraper.sh
 
-1. Clone o repositório:
+# Execute o script
+./scraper.sh
+```
+
+O script irá:
+1. Verificar se Python está instalado
+2. Criar um ambiente virtual Python (`.venv`)
+3. Instalar todas as dependências necessárias
+4. Solicitar os parâmetros de execução (número de artigos e nome do arquivo de saída)
+5. Executar o web scraper
+
+### Método 2: Instalação Manual
+
+Se preferir configurar manualmente:
+
+1. Crie um ambiente virtual Python:
    ```bash
-   git clone https://github.com/seu-usuario/plataforma-de-curso.git
-   cd plataforma-de-curso
+   python3 -m venv .venv
+   source .venv/bin/activate
    ```
 
 2. Instale as dependências:
    ```bash
-   npm install
+   pip install requests beautifulsoup4
    ```
 
-3. Configure as variáveis de ambiente:
-   - Copie o arquivo `.env.example` para `.env`
-   - Preencha as variáveis necessárias
-
-4. Inicie o banco de dados PostgreSQL com Docker:
+3. Execute o script:
    ```bash
-   npm run db:start
+   python3 ynetnews_scraper.py
    ```
 
-5. Configure o banco de dados:
+## Automação do Scraper
+
+### Execução Automatizada
+
+O sistema possui duas formas de automatizar a extração de dados:
+
+1. **Execução Agendada**: O scraper pode ser configurado para rodar automaticamente todos os dias às 18h usando cron:
    ```bash
-   npm run db:migrate
+   # Instalar o agendamento no crontab
+   crontab cronfile.txt
+   
+   # Verificar se o cron foi configurado corretamente
+   crontab -l
    ```
 
-6. Inicie o servidor de desenvolvimento:
-   ```bash
-   npm run dev
-   ```
+2. **Execução Manual**: O scraper também pode ser executado manualmente através da interface administrativa:
+   - Acesse o painel administrativo em `/admin/scraped-articles`
+   - Clique no botão "Executar Scraper" no topo da página
 
-7. Acesse a aplicação em `http://localhost:3000`
+### Script de Automação
 
-### Gerenciamento do Banco de Dados
+O `scraper_auto.sh` é um script não interativo que:
+- Configura automaticamente o ambiente virtual
+- Extrai os artigos
+- Envia os dados para a API
+- Registra a saída em um arquivo de log
 
-Para mais detalhes sobre como gerenciar o banco de dados PostgreSQL com Docker, consulte o arquivo [DATABASE.md](DATABASE.md).
+Para testar o script de automação manualmente:
+```bash
+chmod +x scraper_auto.sh
+./scraper_auto.sh
+```
 
-## Licença
+## Personalizando
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+Você pode personalizar o script de várias formas:
+
+### Usando o Script Automatizado
+
+Ao executar `./scraper.sh`, o script solicitará:
+- O número de artigos a extrair (padrão: 10)
+- O nome do arquivo de saída (padrão: ynetnews_articles.json)
+
+### Editando o Código
+
+Você também pode personalizar o script editando os parâmetros na seção principal:
+
+- Altere o número de artigos a serem extraídos modificando o valor de `limit`
+- Altere o nome do arquivo de saída modificando o parâmetro em `save_to_json()`
+
+### Usando como Módulo
+
+Veja o arquivo `exemplo_uso.py` para um exemplo de como importar e usar a classe `YnetNewsScraper` em seu próprio código.
+
+## Notas Importantes
+
+- Este script faz pausas entre as requisições para não sobrecarregar o servidor
+- Use este script com responsabilidade e de acordo com os Termos de Serviço do site
+- O scraping de sites sem permissão pode violar os termos de uso do site
+
+## Estrutura do JSON de Saída
+
+O arquivo JSON gerado terá a seguinte estrutura:
+
+```json
+[
+  {
+    "url": "URL do artigo",
+    "title": "Título do artigo",
+    "description": "Descrição/subtítulo do artigo",
+    "content": "Conteúdo completo do artigo"
+  },
+  ...
+]
+```

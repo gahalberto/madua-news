@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { 
   Video, 
@@ -15,7 +14,6 @@ import {
   EyeOff,
   Clock,
   Youtube,
-  File
 } from "lucide-react";
 import Link from "next/link";
 
@@ -41,7 +39,6 @@ interface Course {
 }
 
 export default function ChaptersPage({ params }: { params: { id: string } }) {
-  const router = useRouter();
   // NOTA: Em versões futuras do Next.js, isso deve ser alterado para usar React.use(params)
   const courseId = params.id;
   

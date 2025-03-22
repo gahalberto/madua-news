@@ -217,9 +217,12 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
 
       toast.success("Curso atualizado com sucesso!");
       router.push("/admin/cursos");
-    } catch (error: any) {
-      console.error("Erro ao atualizar curso:", error);
-      toast.error(error.message || "Erro ao atualizar curso");
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Erro ao salvar o curso");
+      }
     } finally {
       setIsLoading(false);
     }

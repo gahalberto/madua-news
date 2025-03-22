@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://madua.com.br/sitemap.xml
+
+# Diretórios administrativos
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_next/
+
+# Arquivos específicos
+Disallow: /login
+Disallow: /register
+Disallow: /dashboard 

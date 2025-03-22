@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
@@ -9,7 +8,6 @@ import { FaTrash, FaMinus, FaPlus, FaArrowLeft, FaShoppingCart } from "react-ico
 import { useCart } from "@/hooks/useCart";
 
 export default function CartPage() {
-  const router = useRouter();
   const { items, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
 

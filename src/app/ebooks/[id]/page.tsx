@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -42,7 +42,7 @@ export default function EbookDetailPage({ params }: { params: { id: string } }) 
   const [activeTab, setActiveTab] = useState<'description' | 'details'>('description');
 
   // Função para buscar os dados do e-book
-  const fetchEbookData = async () => {
+  const fetchEbookData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -62,13 +62,13 @@ export default function EbookDetailPage({ params }: { params: { id: string } }) 
       setLoading(false);
       router.push("/ebooks");
     }
-  };
+  }, [params.id, router]);
 
   useEffect(() => {
     if (params && params.id) {
       fetchEbookData();
     }
-  }, [params]);
+  }, [params, fetchEbookData]);
 
   // Formatar preço
   const formatPrice = (price: number) => {

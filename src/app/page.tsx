@@ -1,269 +1,428 @@
+"use client"
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { toast } from "react-hot-toast";
+
+interface Post {
+  id: string;
+  title: string;
+  excerpt: string;
+  imageUrl: string;
+  slug: string;
+  author: {
+    name: string;
+    image: string;
+  };
+  category: {
+    name: string;
+  };
+  createdAt: string;
+}
+
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  price: number;
+  promotionalPrice: number | null;
+  teacher: {
+    name: string;
+    image: string;
+  };
+  category: {
+    name: string;
+  };
+}
+
+interface Ebook {
+  id: string;
+  title: string;
+  description: string;
+  coverImageUrl: string;
+  price: number;
+  promotionalPrice: number | null;
+  category: {
+    name: string;
+  };
+}
 
 export default function Home() {
+  const [featuredPost, setFeaturedPost] = useState<Post | null>(null);
+  const [recentPosts, setRecentPosts] = useState<Post[]>([]);
+  const [featuredCourses, setFeaturedCourses] = useState<Course[]>([]);
+  const [featuredEbooks, setFeaturedEbooks] = useState<Ebook[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Buscar posts
+        const postsResponse = await fetch('/api/posts/featured');
+        const postsData = await postsResponse.json();
+        console.log('Post em destaque:', postsData.featuredPost);
+        setFeaturedPost(postsData.featuredPost);
+        setRecentPosts(postsData.recentPosts);
+
+        // Buscar cursos
+        const coursesResponse = await fetch('/api/courses/featured');
+        const coursesData = await coursesResponse.json();
+        setFeaturedCourses(coursesData);
+
+        // Buscar e-books
+        const ebooksResponse = await fetch('/api/ebooks/featured');
+        const ebooksData = await ebooksResponse.json();
+        setFeaturedEbooks(ebooksData);
+      } catch (error) {
+        console.error('Erro ao buscar dados:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  console.log('Renderizando post em destaque:', featuredPost);
+
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-blue-600">Clube do Rabino</h1>
-          </div>
-          <nav className="hidden md:flex space-x-8">
-            <Link href="/cursos" className="text-gray-600 hover:text-blue-600">
-              Cursos
-            </Link>
-            <Link href="/blog" className="text-gray-600 hover:text-blue-600">
-              Blog
-            </Link>
-            <Link href="/produtos" className="text-gray-600 hover:text-blue-600">
-              Loja
-            </Link>
-            <Link href="/sobre" className="text-gray-600 hover:text-blue-600">
-              Sobre
-            </Link>
-          </nav>
-          <div className="flex items-center space-x-4">
-            <Link
-              href="/login"
-              className="px-4 py-2 rounded text-blue-600 hover:bg-blue-50"
-            >
-              Entrar
-            </Link>
-            <Link
-              href="/registro"
-              className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-            >
-              Registrar
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-20">
-        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center">
-          <div className="md:w-1/2 mb-10 md:mb-0">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Transforme seu futuro com educação de qualidade
-            </h2>
-            <p className="text-xl mb-8">
-              Acesse cursos de alta qualidade, tutoriais e recursos para impulsionar sua carreira e desenvolver novas habilidades.
-            </p>
-            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-              <Link
-                href="/cursos"
-                className="px-6 py-3 bg-white text-blue-600 font-medium rounded-lg hover:bg-gray-100 text-center"
-              >
-                Explorar Cursos
-              </Link>
-              <Link
-                href="/registro"
-                className="px-6 py-3 border border-white text-white font-medium rounded-lg hover:bg-white hover:text-blue-600 text-center"
-              >
-                Começar Grátis
-              </Link>
-            </div>
-          </div>
-          <div className="md:w-1/2 flex justify-center">
-            <div className="relative w-full max-w-lg h-80">
-              <div className="absolute top-0 left-0 w-full h-full bg-white/10 rounded-2xl backdrop-blur-sm"></div>
-              <div className="absolute top-4 left-4 right-4 bottom-4 bg-white/20 rounded-xl"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-6xl font-bold mb-2">100+</div>
-                  <div className="text-xl">Cursos disponíveis</div>
+      {/* Hero Section com Post em Destaque */}
+      {featuredPost && (
+        <section className="bg-gradient-to-r from-gray-900 to-gray-800 text-white py-20">
+          <div className="container mx-auto px-4">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              <div>
+                <span className="text-blue-400 font-semibold mb-4 block">Destaque da Semana</span>
+                <Link href={`/noticias/${featuredPost.slug}`}>
+                  <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight hover:text-blue-400 transition-colors">
+                    {featuredPost.title}
+                  </h1>
+                </Link>
+                <p className="text-xl text-gray-300 mb-8">
+                  {featuredPost.excerpt}
+                </p>
+                <div className="flex items-center space-x-4">
+                  <Image 
+                    src={featuredPost.author.image || "/images/placeholder-author.jpg"} 
+                    alt={featuredPost.author.name}
+                    width={40}
+                    height={40}
+                    className="rounded-full"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/images/placeholder-author.jpg";
+                    }}
+                  />
+                  <div>
+                    <p className="font-medium">{featuredPost.author.name}</p>
+                    <p className="text-sm text-gray-400">
+                      {new Date(featuredPost.createdAt).toLocaleDateString('pt-BR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </p>
+                  </div>
                 </div>
+                <Link
+                  href={`/noticias/${featuredPost.slug}`}
+                  className="mt-8 inline-block px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Ler Mais
+                </Link>
               </div>
+              <Link href={`/noticias/${featuredPost.slug}`} className="block relative w-full h-[400px] rounded-xl overflow-hidden group hover:opacity-90 transition-all duration-300">
+                <div className="absolute inset-0">
+                  <Image 
+                    src={featuredPost.imageUrl || "/images/placeholder-news.jpg"} 
+                    alt={`Imagem em destaque: ${featuredPost.title}`}
+                    width={800}
+                    height={400}
+                    priority
+                    quality={100}
+                    loading="eager"
+                    className="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-300"
+                    style={{ objectFit: 'cover' }}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/images/placeholder-news.jpg";
+                      console.error('Erro ao carregar imagem:', featuredPost.imageUrl);
+                    }}
+                  />
+                </div>
+              </Link>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* Features */}
-      <section className="py-20 bg-gray-50">
+      {/* Posts Recentes */}
+      <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Por que escolher nossa plataforma?</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-xl shadow-sm">
-              <div className="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Cursos Online</h3>
-              <p className="text-gray-600">
-                Acesse mais de 100 cursos em diversas áreas do conhecimento, com conteúdo atualizado e de qualidade.
-              </p>
-            </div>
-            <div className="bg-white p-8 rounded-xl shadow-sm">
-              <div className="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Blog Educacional</h3>
-              <p className="text-gray-600">
-                Artigos, tutoriais e dicas escritos por especialistas para complementar seu aprendizado.
-              </p>
-            </div>
-            <div className="bg-white p-8 rounded-xl shadow-sm">
-              <div className="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Loja de Produtos</h3>
-              <p className="text-gray-600">
-                Adquira livros, materiais didáticos e outros recursos para potencializar seus estudos.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* E-books Section */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between mb-12">
-            <div>
-              <h2 className="text-3xl font-bold mb-4">Biblioteca de E-books</h2>
-              <p className="text-gray-600 max-w-2xl">
-                Explore nossa coleção de e-books exclusivos sobre diversos temas. Desde programação até desenvolvimento pessoal, temos conteúdo para todos os interesses.
-              </p>
-            </div>
+          <div className="flex justify-between items-center mb-12">
+            <h2 className="text-3xl font-bold">Últimos Posts</h2>
             <Link
-              href="/ebooks"
-              className="mt-6 md:mt-0 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 inline-flex items-center"
+              href="/noticias"
+              className="text-blue-600 font-medium hover:text-blue-800 inline-flex items-center"
             >
-              Ver Todos
+              Ver Todas
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
             </Link>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* E-book Card 1 */}
-            <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
-              <div className="relative h-56 bg-gray-200">
-                <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  Grátis
-                </div>
-              </div>
-              <div className="p-5">
-                <h3 className="text-lg font-semibold mb-2">Introdução à Programação</h3>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                  Um guia completo para iniciantes que desejam aprender os fundamentos da programação.
-                </p>
-                <Link
-                  href="/ebooks/introducao-programacao"
-                  className="text-blue-600 font-medium hover:text-blue-800 inline-flex items-center"
-                >
-                  Baixar Grátis
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </Link>
-              </div>
-            </div>
-            
-            {/* E-book Card 2 */}
-            <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
-              <div className="relative h-56 bg-gray-200">
-                <div className="absolute top-2 right-2 bg-yellow-400 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  Destaque
-                </div>
-              </div>
-              <div className="p-5">
-                <h3 className="text-lg font-semibold mb-2">JavaScript Avançado</h3>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                  Domine os conceitos avançados de JavaScript e torne-se um desenvolvedor front-end de elite.
-                </p>
-                <div className="flex justify-between items-center">
-                  <span className="text-blue-600 font-bold">R$ 49,90</span>
-                  <Link
-                    href="/ebooks/javascript-avancado"
-                    className="text-blue-600 font-medium hover:text-blue-800 inline-flex items-center"
-                  >
-                    Ver Detalhes
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  </Link>
-                </div>
-              </div>
-            </div>
-            
-            {/* E-book Card 3 */}
-            <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
-              <div className="relative h-56 bg-gray-200">
-                <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  Promoção
-                </div>
-              </div>
-              <div className="p-5">
-                <h3 className="text-lg font-semibold mb-2">React para Iniciantes</h3>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                  Aprenda a criar aplicações web modernas com React, a biblioteca JavaScript mais popular.
-                </p>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <span className="line-through text-gray-400 text-sm mr-2">R$ 79,90</span>
-                    <span className="text-blue-600 font-bold">R$ 39,90</span>
+          <div className="grid md:grid-cols-3 gap-8">
+            {recentPosts.map((post) => (
+              <Link href={`/noticias/${post.slug}`} key={post.id}>
+                <article className="bg-white rounded-xl shadow-sm overflow-hidden group hover:shadow-lg transition-all duration-300">
+                  <div className="relative h-48">
+                    <Image 
+                      src={post.imageUrl || "/images/placeholder-news.jpg"} 
+                      alt={`Imagem do post: ${post.title}`}
+                      fill
+                      loading="lazy"
+                      className="object-cover transform group-hover:scale-105 transition-transform duration-300"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/images/placeholder-news.jpg";
+                      }}
+                    />
+                    <div className="absolute top-4 left-4 bg-blue-600 text-white text-sm px-3 py-1 rounded-full">
+                      {post.category.name}
+                    </div>
                   </div>
-                  <Link
-                    href="/ebooks/react-iniciantes"
-                    className="text-blue-600 font-medium hover:text-blue-800 inline-flex items-center"
-                  >
-                    Ver Detalhes
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  </Link>
-                </div>
-              </div>
-            </div>
-            
-            {/* E-book Card 4 */}
-            <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
-              <div className="relative h-56 bg-gray-200"></div>
-              <div className="p-5">
-                <h3 className="text-lg font-semibold mb-2">Python para Data Science</h3>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                  Um guia prático para análise de dados, visualização e machine learning com Python.
-                </p>
-                <div className="flex justify-between items-center">
-                  <span className="text-blue-600 font-bold">R$ 59,90</span>
-                  <Link
-                    href="/ebooks/python-data-science"
-                    className="text-blue-600 font-medium hover:text-blue-800 inline-flex items-center"
-                  >
-                    Ver Detalhes
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  </Link>
-                </div>
-              </div>
-            </div>
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold mb-2 hover:text-blue-600 transition-colors">{post.title}</h3>
+                    <p className="text-gray-600 mb-4 line-clamp-2">
+                      {post.excerpt}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Image 
+                          src={post.author.image || "/images/placeholder-author.jpg"} 
+                          alt={post.author.name}
+                          width={24}
+                          height={24}
+                          className="rounded-full"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "/images/placeholder-author.jpg";
+                          }}
+                        />
+                        <span className="text-sm text-gray-600">{post.author.name}</span>
+                      </div>
+                      <span className="text-sm text-gray-500">
+                        {new Date(post.createdAt).toLocaleDateString('pt-BR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-16 bg-blue-600 text-white">
+      {/* Cursos em Destaque */}
+      {featuredCourses.length > 0 && (
+        <section className="py-16 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <div className="flex justify-between items-center mb-12">
+              <h2 className="text-3xl font-bold">Cursos em Destaque</h2>
+              <Link
+                href="/cursos"
+                className="text-blue-600 font-medium hover:text-blue-800 inline-flex items-center"
+              >
+                Ver Todos
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </Link>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {featuredCourses.map((course) => (
+                <div key={course.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="relative h-48">
+                    <Image 
+                      src={course.imageUrl || "https://via.placeholder.com/400x300"} 
+                      alt={course.title}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold mb-2">{course.title}</h3>
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                      {course.description}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        {course.promotionalPrice ? (
+                          <>
+                            <span className="line-through text-gray-400 text-sm mr-2">
+                              R$ {course.price.toFixed(2)}
+                            </span>
+                            <span className="text-blue-600 font-bold">
+                              R$ {course.promotionalPrice.toFixed(2)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-blue-600 font-bold">
+                            R$ {course.price.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                      <Link
+                        href={`/cursos/${course.id}`}
+                        className="text-blue-600 font-medium hover:text-blue-800"
+                      >
+                        Ver Curso
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* E-books */}
+      {featuredEbooks.length > 0 && (
+        <section className="py-16 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="flex justify-between items-center mb-12">
+              <h2 className="text-3xl font-bold">E-books em Destaque</h2>
+              <Link
+                href="/ebooks"
+                className="text-blue-600 font-medium hover:text-blue-800 inline-flex items-center"
+              >
+                Ver Todos
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </Link>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {featuredEbooks.map((ebook) => (
+                <div key={ebook.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="relative h-64 bg-gray-100">
+                    <Image 
+                      src={ebook.coverImageUrl || "https://via.placeholder.com/400x600"} 
+                      alt={ebook.title}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold mb-2">{ebook.title}</h3>
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                      {ebook.description}
+                    </p>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        {ebook.promotionalPrice ? (
+                          <>
+                            <span className="line-through text-gray-400 text-sm mr-2">
+                              R$ {ebook.price.toFixed(2)}
+                            </span>
+                            <span className="text-blue-600 font-bold">
+                              R$ {ebook.promotionalPrice.toFixed(2)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-blue-600 font-bold">
+                            R$ {ebook.price.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                      <Link
+                        href={`/ebooks/${ebook.id}`}
+                        className="text-blue-600 font-medium hover:text-blue-800"
+                      >
+                        Ver Detalhes
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Newsletter */}
+      <section className="py-16 bg-gray-900 text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-6">Pronto para começar sua jornada de aprendizado?</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Junte-se a milhares de estudantes que já estão transformando suas carreiras através da nossa plataforma.
+          <h2 className="text-3xl font-bold mb-6">Fique por dentro das novidades</h2>
+          <p className="text-xl mb-8 max-w-2xl mx-auto text-gray-300">
+            Receba atualizações sobre as últimas notícias de Israel diretamente no seu e-mail.
           </p>
-          <Link
-            href="/registro"
-            className="px-8 py-4 bg-white text-blue-600 font-medium rounded-lg hover:bg-gray-100 inline-block"
+          <form 
+            className="max-w-md mx-auto flex flex-col sm:flex-row gap-4"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const form = e.target as HTMLFormElement;
+              const email = (form.elements.namedItem('email') as HTMLInputElement).value;
+
+              try {
+                const response = await fetch('/api/newsletter', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ email }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                  throw new Error(data.error || 'Erro ao processar inscrição.');
+                }
+
+                // Limpar o formulário
+                form.reset();
+
+                // Mostrar mensagem de sucesso
+                toast.success(data.message);
+              } catch (error) {
+                // Mostrar mensagem de erro
+                toast.error(error instanceof Error ? error.message : 'Erro ao processar inscrição.');
+              }
+            }}
           >
-            Criar Conta Gratuita
-          </Link>
+            <input
+              type="email"
+              name="email"
+              placeholder="Seu melhor e-mail"
+              className="flex-1 px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+              required
+            />
+            <button
+              type="submit"
+              className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Inscrever-se
+            </button>
+          </form>
         </div>
       </section>
 
@@ -280,10 +439,9 @@ export default function Home() {
             <div>
               <h4 className="text-lg font-semibold mb-4">Links Rápidos</h4>
               <ul className="space-y-2">
+                <li><Link href="/blog" className="text-gray-400 hover:text-white">Blog</Link></li>
                 <li><Link href="/cursos" className="text-gray-400 hover:text-white">Cursos</Link></li>
                 <li><Link href="/ebooks" className="text-gray-400 hover:text-white">E-books</Link></li>
-                <li><Link href="/blog" className="text-gray-400 hover:text-white">Blog</Link></li>
-                <li><Link href="/produtos" className="text-gray-400 hover:text-white">Loja</Link></li>
                 <li><Link href="/sobre" className="text-gray-400 hover:text-white">Sobre Nós</Link></li>
               </ul>
             </div>
@@ -320,7 +478,7 @@ export default function Home() {
             </div>
           </div>
           <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Rabino Dor. Todos os direitos reservados.</p>
+            <p>&copy; 2024 EduPlatform. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>

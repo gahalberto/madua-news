@@ -14,6 +14,23 @@ interface EnrollButtonProps {
   className?: string;
 }
 
+interface ErrorResponse {
+  error: string;
+}
+
+interface SuccessResponse {
+  url: string;
+}
+
+interface CartItem {
+  id: string;
+  title: string;
+  price: number;
+  originalPrice: number | null;
+  promotionalPrice: number | null;
+  imageUrl: string;
+}
+
 export default function EnrollButton({
   courseId,
   courseTitle,
@@ -49,7 +66,7 @@ export default function EnrollButton({
       const cart = currentCart ? JSON.parse(currentCart) : [];
       
       // Verificar se o item já está no carrinho
-      if (!cart.some((item: any) => item.id === courseId)) {
+      if (!cart.some((item: CartItem) => item.id === courseId)) {
         cart.push(cartItem);
         localStorage.setItem('cart', JSON.stringify(cart));
       }
@@ -68,16 +85,19 @@ export default function EnrollButton({
           method: "POST",
         });
 
+        const data = (await response.json()) as ErrorResponse | SuccessResponse;
+
         if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || "Erro ao realizar matrícula");
+          const errorData = data as ErrorResponse;
+          toast.error(errorData.error || "Erro ao se inscrever no curso");
+          return;
         }
 
-        toast.success("Matrícula realizada com sucesso!");
-        router.refresh();
-        router.push(`/cursos/${courseId}/aulas`);
-      } catch (error: any) {
-        toast.error(error.message || "Erro ao realizar matrícula");
+        const successData = data as SuccessResponse;
+        window.location.href = successData.url;
+      } catch (error) {
+        console.error("Erro ao se inscrever:", error);
+        toast.error("Erro ao processar sua inscrição");
       } finally {
         setIsLoading(false);
       }
@@ -99,7 +119,7 @@ export default function EnrollButton({
       const cart = currentCart ? JSON.parse(currentCart) : [];
       
       // Verificar se o item já está no carrinho
-      if (!cart.some((item: any) => item.id === courseId)) {
+      if (!cart.some((item: CartItem) => item.id === courseId)) {
         cart.push(cartItem);
         localStorage.setItem('cart', JSON.stringify(cart));
         toast.success("Curso adicionado ao carrinho!");

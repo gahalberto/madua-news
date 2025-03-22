@@ -1,42 +1,94 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
-import { toast } from "react-hot-toast";
-import { ArrowLeft, Save, Trash2, Upload, X, Eye } from "lucide-react";
+import { toast } from "sonner";
+import dynamic from "next/dynamic";
+import ImageUploader from "@/components/admin/ImageUploader";
+import { logDebug } from "@/logs/editor-debug";
 
+// Importação dinâmica do editor para evitar problemas de SSR
+const Editor = dynamic(() => import("@/components/admin/Editor"), { ssr: false });
+
+// Tipos para evitar erros de TypeScript
 interface Category {
   id: string;
   name: string;
+}
+
+interface FormData {
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  metaTitle: string;
+  metaDescription: string;
+  imageFile: File | null;
+  imageUrl: string | null;
+  published: boolean;
+  categoryId: string | null;
 }
 
 export default function EditBlogPostPage({ params }: { params: { id: string } }) {
   const id = params.id; // Usar params diretamente
   
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const editorRef = useRef<HTMLTextAreaElement>(null);
-  
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imagePreview, setImagePreview] = useState("");
   const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     title: "",
     slug: "",
     excerpt: "",
     content: "",
     metaTitle: "",
     metaDescription: "",
-    imageFile: null as File | null,
-    imageUrl: null as string | null,
+    imageFile: null,
+    imageUrl: null,
     published: false,
-    categoryId: "",
+    categoryId: null,
   });
+
+  // Manipulador para mudanças nos campos do formulário
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    
+    if (type === 'file') {
+      const fileInput = e.target as HTMLInputElement;
+      const file = fileInput.files?.[0] || null;
+      setFormData(prev => ({
+        ...prev,
+        [name]: file
+      }));
+      return;
+    }
+
+    if (type === 'checkbox') {
+      const checkboxInput = e.target as HTMLInputElement;
+      setFormData(prev => ({
+        ...prev,
+        [name]: checkboxInput.checked
+      }));
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Manipulador para mudanças no conteúdo do editor
+  const handleEditorChange = (content: string) => {
+    logDebug("Editor content changed", { length: content?.length, preview: content?.substring(0, 100) });
+    
+    setFormData((prev) => ({
+      ...prev,
+      content,
+    }));
+  };
 
   // Buscar dados do post
   useEffect(() => {
@@ -49,18 +101,23 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
         }
         
         const post = await response.json();
+        logDebug("Post data fetched", { 
+          title: post.title, 
+          contentLength: post.content?.length,
+          contentPreview: post.content?.substring(0, 100)
+        });
         
         setFormData({
           title: post.title,
-          slug: generateSlug(post.title),
+          slug: post.slug || generateSlug(post.title),
           excerpt: post.excerpt || "",
-          content: post.content,
+          content: post.content || "",
           metaTitle: post.metaTitle || post.title,
           metaDescription: post.metaDescription || "",
           imageFile: null,
-          imageUrl: post.imageUrl,
-          published: post.published,
-          categoryId: post.categoryId || "",
+          imageUrl: post.imageUrl || null,
+          published: post.published || false,
+          categoryId: post.categoryId || null,
         });
         
         if (post.imageUrl) {
@@ -111,166 +168,63 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
     }
   }, [formData.title]);
 
-  // Gerar meta title a partir do título se não for preenchido
-  useEffect(() => {
-    if (formData.title && !formData.metaTitle) {
-      setFormData(prev => ({ ...prev, metaTitle: formData.title }));
-    }
-  }, [formData.title, formData.metaTitle]);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type } = e.target as HTMLInputElement;
-    
-    if (type === "checkbox") {
-      const { checked } = e.target as HTMLInputElement;
-      setFormData((prev) => ({ ...prev, [name]: checked }));
-    } else if (type === "file") {
-      const fileInput = e.target as HTMLInputElement;
-      if (fileInput.files && fileInput.files[0]) {
-        const file = fileInput.files[0];
-        setFormData((prev) => ({ ...prev, imageFile: file }));
-        
-        // Criar preview da imagem
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setImagePreview(e.target?.result as string);
-        };
-        reader.readAsDataURL(file);
-      }
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFormData(prev => ({ ...prev, categoryId: e.target.value }));
-  };
-
-  const handleRemoveImage = () => {
-    setFormData(prev => ({ ...prev, imageFile: null, imageUrl: null }));
-    setImagePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  // Inserir formatação no editor
-  const insertFormatting = (format: string) => {
-    if (!editorRef.current) return;
-    
-    const editor = editorRef.current;
-    const start = editor.selectionStart;
-    const end = editor.selectionEnd;
-    const selectedText = editor.value.substring(start, end);
-    let formattedText = "";
-    
-    switch (format) {
-      case "bold":
-        formattedText = `**${selectedText}**`;
-        break;
-      case "italic":
-        formattedText = `*${selectedText}*`;
-        break;
-      case "heading":
-        formattedText = `## ${selectedText}`;
-        break;
-      case "link":
-        formattedText = `[${selectedText}](url)`;
-        break;
-      case "image":
-        formattedText = `![alt text](url)`;
-        break;
-      case "code":
-        formattedText = `\`\`\`\n${selectedText}\n\`\`\``;
-        break;
-      case "list":
-        formattedText = `- ${selectedText.split('\n').join('\n- ')}`;
-        break;
-      default:
-        formattedText = selectedText;
-    }
-    
-    const newContent = editor.value.substring(0, start) + formattedText + editor.value.substring(end);
-    setFormData(prev => ({ ...prev, content: newContent }));
-    
-    // Reposicionar o cursor após a formatação
-    setTimeout(() => {
-      editor.focus();
-      editor.selectionStart = start + formattedText.length;
-      editor.selectionEnd = start + formattedText.length;
-    }, 0);
-  };
-
+  // Manipulador para envio do formulário
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSaving(true);
+
+    if (!formData.title || !formData.content) {
+      toast.error("Por favor preencha os campos obrigatórios");
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
-      // Validar campos obrigatórios
-      if (!formData.title || !formData.content) {
-        toast.error("Título e conteúdo são obrigatórios");
-        setIsSaving(false);
-        return;
-      }
-
-      // Preparar os dados para envio
-      const postData: {
-        title: string;
-        content: string;
-        published: boolean;
-        imageUrl?: string;
-        categoryId?: string;
-        excerpt?: string;
-        metaTitle?: string;
-        metaDescription?: string;
-      } = {
-        title: formData.title,
-        content: formData.content,
-        published: formData.published,
-        excerpt: formData.excerpt,
-        metaTitle: formData.metaTitle,
-        metaDescription: formData.metaDescription,
+      const { title, slug, excerpt, content, metaTitle, metaDescription, imageFile, imageUrl, published, categoryId } = formData;
+      
+      const postData: FormData = {
+        title,
+        slug,
+        excerpt,
+        content,
+        metaTitle: metaTitle || title,
+        metaDescription: metaDescription || excerpt.substring(0, 160),
+        imageFile,
+        imageUrl,
+        published,
+        categoryId: categoryId || null,
       };
 
-      if (formData.categoryId) {
-        postData.categoryId = formData.categoryId;
-      }
-
-      // Se houver uma imagem nova, fazer upload
-      if (formData.imageFile) {
+      // Se houver nova imagem, enviar para upload primeiro
+      if (postData.imageFile) {
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", postData.imageFile);
+        uploadFormData.append("type", "blog");
+        
         try {
-          const imageFormData = new FormData();
-          imageFormData.append("file", formData.imageFile);
-
-          const uploadResponse = await fetch("/api/upload", {
+          logDebug("Enviando imagem", { fileName: postData.imageFile.name, fileSize: postData.imageFile.size });
+          
+          const uploadResponse = await fetch("/api/upload?type=blog", {
             method: "POST",
-            body: imageFormData,
+            body: uploadFormData,
           });
-
+          
           if (!uploadResponse.ok) {
-            throw new Error("Erro ao fazer upload da imagem");
+            throw new Error(`Erro no upload: ${uploadResponse.status}`);
           }
-
-          const { imageUrl } = await uploadResponse.json();
-          postData.imageUrl = imageUrl;
-        } catch (error) {
-          console.error("Erro ao fazer upload da imagem:", error);
-          toast.error("Erro ao fazer upload da imagem");
-          setIsSaving(false);
-          return;
+          
+          const { url } = await uploadResponse.json();
+          postData.imageUrl = url;
+        } catch (uploadError) {
+          console.error("Erro durante upload:", uploadError);
+          toast.error(`Erro no upload: ${uploadError instanceof Error ? uploadError.message : "Erro desconhecido"}`);
         }
-      } else if (formData.imageUrl) {
-        // Manter a imagem existente
-        postData.imageUrl = formData.imageUrl;
       }
 
-      console.log("Dados enviados:", postData); // Log para debug
-
-      // Enviar dados para a API
+      logDebug("Enviando post para API", { postDataLength: JSON.stringify(postData).length });
+      
       const response = await fetch(`/api/posts/${id}`, {
-        method: "PATCH",
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
@@ -278,86 +232,118 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erro ao atualizar post");
+        throw new Error(`Erro ao salvar: ${response.status}`);
       }
-
-      const updatedPost = await response.json();
-      console.log("Post atualizado:", updatedPost);
 
       toast.success("Post atualizado com sucesso!");
       router.push("/admin/blog");
     } catch (error) {
-      console.error("Erro ao atualizar post:", error);
-      toast.error(error instanceof Error ? error.message : "Ocorreu um erro ao atualizar o post");
+      console.error("Erro ao salvar:", error);
+      toast.error(`Erro ao salvar: ${error instanceof Error ? error.message : "Erro desconhecido"}`);
     } finally {
-      setIsSaving(false);
+      setIsSubmitting(false);
     }
   };
 
+  // Função para excluir o post
   const handleDelete = async () => {
-    if (!confirm("Tem certeza que deseja excluir este post? Esta ação não pode ser desfeita.")) {
+    if (!window.confirm("Tem certeza que deseja excluir este post? Esta ação não pode ser desfeita.")) {
       return;
     }
-
-    setIsDeleting(true);
-
+    
+    setIsSubmitting(true);
+    
     try {
       const response = await fetch(`/api/posts/${id}`, {
         method: "DELETE",
       });
-
+      
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erro ao excluir post");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erro ao excluir post");
       }
-
+      
       toast.success("Post excluído com sucesso!");
       router.push("/admin/blog");
     } catch (error) {
       console.error("Erro ao excluir post:", error);
-      toast.error(error instanceof Error ? error.message : "Ocorreu um erro ao excluir o post");
+      toast.error(`Erro ao excluir post: ${error instanceof Error ? error.message : "Erro desconhecido"}`);
     } finally {
-      setIsDeleting(false);
+      setIsSubmitting(false);
     }
+  };
+
+  // Manipulador para upload de imagem
+  const handleImageChange = (file: File | null) => {
+    if (!file) {
+      setFormData((prev) => ({ ...prev, imageFile: null }));
+      setImagePreview("");
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result;
+      if (typeof result === 'string') {
+        setImagePreview(result);
+      }
+    };
+    reader.readAsDataURL(file);
+    
+    setFormData((prev) => ({ ...prev, imageFile: file }));
   };
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="container mx-auto p-4">
+        <div className="bg-white shadow rounded-lg p-8">
+          <div className="animate-pulse">
+            <div className="h-10 bg-gray-200 rounded mb-6 w-3/4"></div>
+            <div className="h-6 bg-gray-200 rounded mb-4 w-1/2"></div>
+            <div className="h-40 bg-gray-200 rounded mb-4"></div>
+            <div className="h-6 bg-gray-200 rounded mb-2 w-1/3"></div>
+            <div className="h-6 bg-gray-200 rounded mb-2 w-1/4"></div>
+            <div className="h-6 bg-gray-200 rounded mb-2 w-1/5"></div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Link
-            href="/admin/blog"
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </Link>
-          <h1 className="text-2xl font-bold tracking-tight">Editar Post</h1>
-        </div>
+    <div className="container mx-auto p-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Editar Post</h1>
         <div className="flex items-center space-x-2">
           <Link
             href={`/blog/${id}`}
             className="flex items-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
             target="_blank"
           >
-            <Eye size={16} className="mr-2" />
-            Visualizar
+            <span className="mr-2">Ver no Blog</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
           </Link>
           <button
             onClick={handleDelete}
-            className="flex items-center px-4 py-2 border border-red-300 text-red-600 rounded-md hover:bg-red-50 transition-colors"
-            disabled={isDeleting}
+            type="button"
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+            disabled={isSubmitting}
           >
-            <Trash2 size={16} className="mr-2" />
-            {isDeleting ? "Excluindo..." : "Excluir"}
+            Excluir
           </button>
         </div>
       </div>
@@ -401,7 +387,38 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
               </p>
             </div>
 
-            {/* Categoria e Status */}
+            {/* Resumo */}
+            <div className="col-span-2">
+              <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700 mb-1">
+                Resumo
+              </label>
+              <textarea
+                id="excerpt"
+                name="excerpt"
+                value={formData.excerpt}
+                onChange={handleChange}
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Breve resumo do post (usado em listagens e SEO)"
+              ></textarea>
+            </div>
+
+            {/* Editor de Conteúdo */}
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Conteúdo *
+              </label>
+              <Editor
+                initialContent={formData.content}
+                onChange={handleEditorChange}
+                placeholder="Conteúdo do post"
+              />
+              <div className="mt-2 text-sm text-blue-600 cursor-pointer" onClick={() => logDebug("Conteúdo atual", formData.content)}>
+                Verificar conteúdo no console
+              </div>
+            </div>
+
+            {/* Categoria */}
             <div className="col-span-2 md:col-span-1">
               <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-1">
                 Categoria
@@ -409,11 +426,11 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
               <select
                 id="categoryId"
                 name="categoryId"
-                value={formData.categoryId}
-                onChange={handleCategoryChange}
+                value={formData.categoryId || ""}
+                onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Selecione uma categoria</option>
+                <option value="">Sem categoria</option>
                 {availableCategories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
@@ -422,169 +439,44 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
               </select>
             </div>
 
+            {/* Status de Publicação */}
             <div className="col-span-2 md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Status de Publicação
               </label>
-              <div className="flex items-center space-x-2 mt-2">
+              <div className="flex items-center">
                 <input
                   type="checkbox"
                   id="published"
                   name="published"
                   checked={formData.published}
                   onChange={handleChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <label htmlFor="published" className="text-sm text-gray-700">
+                <label htmlFor="published" className="ml-2 text-sm text-gray-700">
                   Publicar post (visível para todos)
                 </label>
               </div>
             </div>
 
-            {/* Resumo */}
+            {/* Upload de Imagem */}
             <div className="col-span-2">
-              <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700 mb-1">
-                Resumo *
-              </label>
-              <textarea
-                id="excerpt"
-                name="excerpt"
-                rows={3}
-                required
-                value={formData.excerpt}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Breve resumo do post (será exibido nas listagens)"
-              ></textarea>
-            </div>
-
-            {/* Imagem */}
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Imagem de Destaque
               </label>
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                {imagePreview ? (
-                  <div className="relative w-full h-64">
-                    <Image
-                      src={imagePreview}
-                      alt="Preview"
-                      fill
-                      className="object-cover rounded-md"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-1 text-center">
-                    <div className="flex text-sm text-gray-600">
-                      <label
-                        htmlFor="image"
-                        className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none"
-                      >
-                        <div className="flex flex-col items-center justify-center">
-                          <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                          <span>Clique para fazer upload</span>
-                          <input
-                            id="image"
-                            name="image"
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleChange}
-                            className="sr-only"
-                            accept="image/*"
-                          />
-                        </div>
-                      </label>
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      PNG, JPG, GIF até 10MB
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Editor de Conteúdo */}
-            <div className="col-span-2">
-              <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-                Conteúdo *
-              </label>
-              <div className="mb-2 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => insertFormatting("bold")}
-                  className="px-2 py-1 border border-gray-300 rounded hover:bg-gray-100"
-                >
-                  <strong>B</strong>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertFormatting("italic")}
-                  className="px-2 py-1 border border-gray-300 rounded hover:bg-gray-100"
-                >
-                  <em>I</em>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertFormatting("heading")}
-                  className="px-2 py-1 border border-gray-300 rounded hover:bg-gray-100"
-                >
-                  H2
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertFormatting("link")}
-                  className="px-2 py-1 border border-gray-300 rounded hover:bg-gray-100"
-                >
-                  Link
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertFormatting("image")}
-                  className="px-2 py-1 border border-gray-300 rounded hover:bg-gray-100"
-                >
-                  Imagem
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertFormatting("code")}
-                  className="px-2 py-1 border border-gray-300 rounded hover:bg-gray-100"
-                >
-                  Código
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertFormatting("list")}
-                  className="px-2 py-1 border border-gray-300 rounded hover:bg-gray-100"
-                >
-                  Lista
-                </button>
-              </div>
-              <textarea
-                id="content"
-                name="content"
-                rows={15}
-                required
-                ref={editorRef}
-                value={formData.content}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
-                placeholder="Conteúdo do post (suporta Markdown)"
-              ></textarea>
-              <p className="mt-1 text-sm text-gray-500">
-                Use Markdown para formatação. Você pode usar os botões acima para ajudar.
+              <ImageUploader
+                initialImageUrl={imagePreview}
+                onImageChange={handleImageChange}
+                className="mb-2"
+              />
+              <p className="text-sm text-gray-500">
+                Imagem principal do post. Recomendamos dimensões de 1200x630px.
               </p>
             </div>
 
             {/* SEO */}
             <div className="col-span-2">
-              <h3 className="text-lg font-medium text-gray-900 mb-3">SEO</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">SEO</h3>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <label htmlFor="metaTitle" className="block text-sm font-medium text-gray-700 mb-1">
@@ -599,39 +491,45 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Título para SEO (se diferente do título principal)"
                   />
+                  <p className="mt-1 text-sm text-gray-500">
+                    {formData.metaTitle.length} / 60 caracteres
+                  </p>
                 </div>
                 <div>
                   <label htmlFor="metaDescription" className="block text-sm font-medium text-gray-700 mb-1">
                     Meta Descrição
                   </label>
-                  <input
-                    type="text"
+                  <textarea
                     id="metaDescription"
                     name="metaDescription"
                     value={formData.metaDescription}
                     onChange={handleChange}
+                    rows={2}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Descrição para SEO (150-160 caracteres)"
-                  />
+                    placeholder="Descrição para SEO (se diferente do resumo)"
+                  ></textarea>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {formData.metaDescription.length} / 160 caracteres
+                  </p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          {/* Botões de Ação */}
+          <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
             <Link
               href="/admin/blog"
-              className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
             >
               Cancelar
             </Link>
             <button
               type="submit"
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              disabled={isSaving}
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-300"
+              disabled={isSubmitting}
             >
-              <Save size={16} className="mr-2" />
-              {isSaving ? "Salvando..." : "Salvar Alterações"}
+              {isSubmitting ? "Salvando..." : "Salvar Alterações"}
             </button>
           </div>
         </form>

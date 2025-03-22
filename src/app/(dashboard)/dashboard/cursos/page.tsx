@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Laptop, AlertCircle, Search, Play, BookOpen, Clock, Calendar } from "lucide-react";
+import { Laptop, AlertCircle, Search, Play, BookOpen, Calendar } from "lucide-react";
 
 interface Teacher {
   id: string;
