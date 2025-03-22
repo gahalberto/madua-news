@@ -3,13 +3,20 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import path from 'path';
 
 const execPromise = promisify(exec);
 
 // Função para executar o scraper
 async function runScraper(): Promise<{ success: boolean; message: string; details?: Record<string, unknown> }> {
   try {
-    const { stdout, stderr } = await execPromise('./scraper_auto.sh');
+    // Usar caminho absoluto para o script
+    const scriptPath = path.join(process.cwd(), 'scraper_auto.sh');
+    
+    // Ativar o ambiente virtual antes de executar o script
+    const command = `source ${path.join(process.cwd(), 'venv', 'bin', 'activate')} && bash ${scriptPath}`;
+    
+    const { stdout, stderr } = await execPromise(command);
     
     if (stderr && !stderr.includes('Iniciando extração')) {
       console.error('Erro ao executar o scraper:', stderr);
