@@ -10,12 +10,11 @@ const execPromise = promisify(exec);
 // Função para executar o scraper
 async function runScraper(): Promise<{ success: boolean; message: string; details?: Record<string, unknown> }> {
   try {
-    // Usar caminho absoluto para o script e o Python do ambiente virtual
+    // Usar caminho absoluto para o script
     const scriptPath = path.join(process.cwd(), 'scraper_auto.sh');
-    const pythonPath = path.join(process.cwd(), 'venv', 'bin', 'python3');
     
-    // Executar o script usando o Python do ambiente virtual
-    const command = `${pythonPath} ${scriptPath}`;
+    // Executar o script shell
+    const command = `bash ${scriptPath}`;
     
     const { stdout, stderr } = await execPromise(command);
     
