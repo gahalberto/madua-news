@@ -145,7 +145,8 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
     notFound();
   }
   
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://madua.com.br'
+  // Garantir que a URL base seja sempre o domínio de produção
+  const baseUrl = 'https://madua.com.br'
   const shareUrl = `${baseUrl}/noticias/${post.slug}`
   const shareTitle = post.title
   
