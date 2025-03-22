@@ -17,23 +17,17 @@ if ! command -v python3 &> /dev/null; then
 fi
 
 # Diretório do ambiente virtual
-VENV_DIR=".venv"
+VENV_DIR="venv"
 
-# Ativa o ambiente virtual se existir, ou cria um novo
+# Verifica se o ambiente virtual existe
 if [ ! -d "$VENV_DIR" ]; then
-    echo "Criando ambiente virtual Python..."
-    python3 -m venv "$VENV_DIR"
-    if [ $? -ne 0 ]; then
-        echo "ERRO: Falha ao criar o ambiente virtual."
-        exit 1
-    fi
+    echo "ERRO: Ambiente virtual não encontrado em $VENV_DIR"
+    echo "Execute setup_scraper.sh primeiro"
+    exit 1
 fi
 
-# Ativa o ambiente virtual
-source "$VENV_DIR/bin/activate"
-
-# Instala as dependências se necessário
-pip install requests beautifulsoup4 > /dev/null
+# Define o Python do ambiente virtual
+PYTHON_PATH="$VENV_DIR/bin/python3"
 
 # Define parâmetros fixos
 LIMIT=10
@@ -45,7 +39,7 @@ echo "Iniciando extração de $LIMIT artigos..."
 echo "Os resultados serão salvos em: $OUTPUT"
 
 # Executa o scraper em modo silencioso
-python - <<EOF
+"$PYTHON_PATH" - <<EOF
 import sys
 sys.path.append('.')
 from ynetnews_scraper import YnetNewsScraper
@@ -58,7 +52,7 @@ print(f"Total de artigos extraídos: {len(articles)}")
 EOF
 
 # Envia os dados para a API
-python - <<EOF
+"$PYTHON_PATH" - <<EOF
 import sys
 sys.path.append('.')
 import json
@@ -141,9 +135,6 @@ else:
 
 print("Operação completa!")
 EOF
-
-# Desativa o ambiente virtual
-deactivate
 
 echo ""
 echo "=== Extração e envio concluídos ==="
