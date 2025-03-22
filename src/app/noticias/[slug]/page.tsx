@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma/client";
 import { CommentForm } from "./CommentForm";
 import { SocialShare } from '@/components/SocialShare';
+import { TelegramShareButton } from '@/components/TelegramShareButton';
 
 // Buscar post pelo ID
 async function getBlogPost(slug: string) {
@@ -234,8 +235,12 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         )}
 
         {/* Botões de Compartilhamento */}
-        <div className="flex justify-center mb-8">
+        <div className="flex flex-col items-center gap-4 mb-8">
           <SocialShare url={shareUrl} title={shareTitle} />
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">Compartilhar manualmente no Telegram:</span>
+            <TelegramShareButton url={shareUrl} title={shareTitle} />
+          </div>
         </div>
       </header>
       
