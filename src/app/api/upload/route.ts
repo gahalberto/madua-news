@@ -41,23 +41,27 @@ export async function POST(req: NextRequest) {
     }
     
     // Verificar o tipo de arquivo
-    if ((fileType === "cover" || fileType === "blog") && !file.type.startsWith("image/")) {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: "O arquivo deve ser uma imagem" },
+        { error: "Tipo de arquivo não permitido" },
         { status: 400 }
       );
     }
     
-    if (fileType === "file" && !["application/pdf", "application/epub+zip"].includes(file.type)) {
+    // Validar tamanho do arquivo (máximo 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
       return NextResponse.json(
-        { error: "O arquivo deve ser um PDF ou EPUB" },
+        { error: "Arquivo muito grande. Máximo 5MB" },
         { status: 400 }
       );
     }
     
     // Gerar um nome único para o arquivo
+    const uniqueId = uuidv4();
     const fileExtension = file.name.split(".").pop();
-    const fileName = `${uuidv4()}.${fileExtension}`;
+    const fileName = `${uniqueId}.${fileExtension}`;
     
     // Definir o diretório de destino
     let directory = "uploads";
@@ -85,7 +89,8 @@ export async function POST(req: NextRequest) {
     }
     
     // Retornar o caminho do arquivo
-    const fileUrl = `/${directory}/${fileName}`;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+    const fileUrl = `${baseUrl}/${directory.replace('public/', '')}/${fileName}`;
     
     return NextResponse.json({ url: fileUrl });
   } catch (error) {

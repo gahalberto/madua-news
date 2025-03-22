@@ -45,6 +45,8 @@ const nextConfig = {
       'picsum.photos',
       'cdn.onesignal.com'
     ],
+    unoptimized: false,
+    minimumCacheTTL: 60,
   },
   // Otimizações de performance
   poweredByHeader: false,
@@ -168,7 +170,39 @@ const nextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: true,
-  }
+  },
+  // Configuração para servir arquivos estáticos
+  async headers() {
+    return [
+      {
+        source: '/uploads/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/blog-images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/covers/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig; 
