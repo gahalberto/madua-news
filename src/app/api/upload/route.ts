@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { writeFile } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { v4 as uuidv4 } from "uuid";
 
@@ -71,6 +71,17 @@ export async function POST(req: NextRequest) {
     
     const publicDir = join(process.cwd(), "public", directory);
     
+    // Criar diretório se não existir
+    try {
+      await mkdir(publicDir, { recursive: true });
+    } catch (error) {
+      console.error("Erro ao criar diretório:", error);
+      return NextResponse.json(
+        { error: "Erro ao criar diretório para upload" },
+        { status: 500 }
+      );
+    }
+    
     // Ler o conteúdo do arquivo
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
@@ -83,14 +94,14 @@ export async function POST(req: NextRequest) {
     } catch (fileError) {
       console.error("Erro ao salvar arquivo:", fileError);
       return NextResponse.json(
-        { error: "Erro ao salvar o arquivo no servidor. Verifique se o diretório existe." },
+        { error: "Erro ao salvar o arquivo no servidor" },
         { status: 500 }
       );
     }
     
     // Retornar o caminho do arquivo
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || '';
-    const fileUrl = `${baseUrl}/${directory.replace('public/', '')}/${fileName}`;
+    const fileUrl = `${baseUrl}/${directory}/${fileName}`;
     
     return NextResponse.json({ url: fileUrl });
   } catch (error) {

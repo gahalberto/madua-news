@@ -43,9 +43,10 @@ const nextConfig = {
       'cloudflare-ipfs.com',
       'loremflickr.com',
       'picsum.photos',
-      'cdn.onesignal.com'
+      'cdn.onesignal.com',
+      'madua.com.br'
     ],
-    unoptimized: false,
+    unoptimized: true,
     minimumCacheTTL: 60,
   },
   // Otimizações de performance
@@ -55,8 +56,7 @@ const nextConfig = {
   generateEtags: true,
   // Headers HTTP personalizados
   async headers() {
-    // Configurações específicas para ambiente de produção
-    const productionHeaders = [
+    return [
       {
         source: '/:path*',
         headers: [
@@ -87,103 +87,6 @@ const nextConfig = {
         ]
       },
       {
-        // Adiciona permissões específicas para os arquivos do Service Worker do OneSignal
-        source: '/OneSignalSDKWorker.js',
-        headers: [
-          {
-            key: 'Content-Type',
-            value: 'application/javascript'
-          },
-          {
-            key: 'Service-Worker-Allowed',
-            value: '/'
-          },
-          {
-            // Remove a CSP para o Service Worker do OneSignal
-            key: 'Content-Security-Policy',
-            value: ""
-          }
-        ]
-      }
-    ];
-
-    // Configurações específicas para ambiente de desenvolvimento
-    const devHeaders = [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on'
-          },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block'
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN'
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff'
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin'
-          },
-          // CSP mais permissivo para desenvolvimento
-          {
-            key: 'Content-Security-Policy',
-            value: "default-src * 'unsafe-inline' 'unsafe-eval'; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src * 'unsafe-inline'; img-src * data: blob: 'unsafe-inline'; frame-src *; style-src * 'unsafe-inline';"
-          },
-          // Permitir CORS em desenvolvimento
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*'
-          }
-        ]
-      },
-      {
-        source: '/OneSignalSDKWorker.js',
-        headers: [
-          {
-            key: 'Content-Type',
-            value: 'application/javascript'
-          },
-          {
-            key: 'Service-Worker-Allowed',
-            value: '/'
-          }
-        ]
-      }
-    ];
-
-    return process.env.NODE_ENV === 'development' 
-      ? devHeaders 
-      : productionHeaders;
-  },
-  experimental: { },
-  // Opções para ignorar erros durante o build
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  // Configuração para servir arquivos estáticos
-  async headers() {
-    return [
-      {
-        source: '/uploads/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-      {
         source: '/blog-images/:path*',
         headers: [
           {
@@ -201,8 +104,25 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: '/uploads/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      }
     ];
   },
+  experimental: { },
+  // Opções para ignorar erros durante o build
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  }
 };
 
 module.exports = nextConfig; 
