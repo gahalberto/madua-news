@@ -4,7 +4,7 @@ import "./globals.css";
 import "@/styles/tiptap.css";
 import AuthProvider from "@/components/auth/auth-provider";
 import { CartProvider } from "@/hooks/useCart";
-import { Toaster } from "react-hot-toast";
+import { Toaster } from "@/components/ui/toaster";
 import MainNavbar from "@/components/MainNavbar";
 import Script from "next/script";
 import Head from "next/head";

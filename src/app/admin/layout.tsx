@@ -265,6 +265,30 @@ export default function AdminLayout({
                 </svg>
                 Usuários
               </Link>
+              <Link
+                href="/admin/contacts"
+                className={`flex items-center px-4 py-2 rounded-lg ${
+                  isActive("/admin/contacts")
+                    ? "bg-gray-700 text-white"
+                    : "text-gray-300 hover:bg-gray-700"
+                }`}
+              >
+                <svg
+                  className="w-5 h-5 mr-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  ></path>
+                </svg>
+                Contatos
+              </Link>
               <div className="pt-4 mt-4 border-t border-gray-700">
                 <Link
                   href="/dashboard"
@@ -558,6 +582,31 @@ export default function AdminLayout({
                   ></path>
                 </svg>
                 Usuários
+              </Link>
+              <Link
+                href="/admin/contacts"
+                className={`flex items-center px-4 py-2 rounded-lg ${
+                  isActive("/admin/contacts")
+                    ? "bg-gray-700 text-white"
+                    : "text-gray-300 hover:bg-gray-700"
+                }`}
+                onClick={toggleSidebar}
+              >
+                <svg
+                  className="w-5 h-5 mr-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  ></path>
+                </svg>
+                Contatos
               </Link>
               <div className="pt-4 mt-4 border-t border-gray-700">
                 <Link
