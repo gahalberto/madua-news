@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/toaster";
 import MainNavbar from "@/components/MainNavbar";
 import Script from "next/script";
 import Head from "next/head";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -148,6 +149,7 @@ export default function RootLayout({
             <MainNavbar />
             {children}
             <Toaster />
+            <GoogleAnalytics />
           </CartProvider>
         </AuthProvider>
         {/* Estruturação de dados para Rich Snippets */}
