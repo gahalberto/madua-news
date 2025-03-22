@@ -75,6 +75,15 @@ async function getBlogPost(slug: string) {
   }
 }
 
+// Função para limpar HTML e formatar texto
+function cleanHtmlText(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, '') // Remove todas as tags HTML
+    .replace(/&nbsp;/g, ' ') // Substitui &nbsp; por espaço
+    .replace(/\s+/g, ' ') // Remove espaços extras
+    .trim(); // Remove espaços no início e fim
+}
+
 // Gerar metadados para SEO
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   // Await params antes de extrair a propriedade slug
@@ -88,13 +97,15 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       description: 'O post que você está procurando não foi encontrado.'
     };
   }
+
+  const cleanDescription = cleanHtmlText(post.content).substring(0, 160);
   
   return {
     title: `${post.title} | Notícias do Clube do Rabino`,
-    description: post.content.substring(0, 160),
+    description: cleanDescription,
     openGraph: {
       title: post.title,
-      description: post.content.substring(0, 160),
+      description: cleanDescription,
       type: 'article',
       publishedTime: post.createdAt.toISOString(),
       modifiedTime: post.updatedAt.toISOString(),
@@ -111,7 +122,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     twitter: {
       card: 'summary_large_image',
       title: post.title,
-      description: post.content.substring(0, 160),
+      description: cleanDescription,
       images: post.imageUrl ? [post.imageUrl] : undefined,
     },
     alternates: {
