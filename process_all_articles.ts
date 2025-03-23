@@ -40,6 +40,34 @@ async function processArticle(articleId: string) {
       throw new Error(`Artigo ${articleId} não encontrado`);
     }
 
+    // Extrai informações de imagem do artigo
+    let featuredImage = '';
+    let contentWithLocalImages = article.content;
+    
+    try {
+      const articleData = JSON.parse(article.rawData || '{}');
+      
+      // Processa imagem principal
+      if (articleData.main_image && articleData.main_image.local_path) {
+        featuredImage = articleData.main_image.local_path;
+        console.log(`Imagem principal encontrada: ${featuredImage}`);
+      }
+      
+      // Substitui URLs de imagem no conteúdo pelos caminhos locais
+      if (Array.isArray(articleData.content_images)) {
+        articleData.content_images.forEach((img: { original_url: string; local_path: string }) => {
+          if (img.original_url && img.local_path) {
+            contentWithLocalImages = contentWithLocalImages.replace(
+              new RegExp(img.original_url, 'g'), 
+              img.local_path
+            );
+          }
+        });
+      }
+    } catch (e) {
+      console.warn(`Erro ao processar dados de imagem: ${e}`);
+    }
+
     // Prompt para a API do ChatGPT
     const prompt = `
     Traduza e reescreva o seguinte artigo de notícias do inglês para o português brasileiro.
@@ -51,7 +79,7 @@ async function processArticle(articleId: string) {
     DESCRIÇÃO ORIGINAL: ${article.description}
     
     CONTEÚDO ORIGINAL:
-    ${article.content}
+    ${contentWithLocalImages}
     
     Responda apenas com um JSON no seguinte formato:
     {
@@ -127,6 +155,7 @@ async function processArticle(articleId: string) {
         published: true,
         authorId: adminUser.id,
         categoryId: newsCategory.id,
+        featuredImage: featuredImage || null,
       }
     });
 

@@ -47,6 +47,7 @@ async function main() {
           title: artigo.title,
           description: artigo.description,
           content: artigo.content,
+          rawData: JSON.stringify(artigo),
           status: 'PENDING',
           source: 'YNET_NEWS',
         }

@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
             title: article.title,
             description: article.description,
             content: article.content,
+            rawData: JSON.stringify(article), // Salva o objeto completo como JSON
             status: 'PENDING', // Status inicial: pendente de processamento
             source: 'YNET_NEWS',
           }

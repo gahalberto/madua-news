@@ -211,6 +211,7 @@ model Post {
   slug            String?   @unique
   imageUrl        String?
   bannerUrl       String?   // URL do banner gerado
+  featuredImage   String?   // Caminho da imagem principal
   categoryId      String?
   metaTitle       String?
   metaDescription String?
@@ -448,6 +449,7 @@ model ScrapedArticle {
   title         String
   description   String?   @db.Text
   content       String    @db.Text
+  rawData       String?   @db.Text  // Dados brutos do artigo em formato JSON
   source        String    // Fonte do artigo (ex: YNET_NEWS)
   status        String    // PENDING, PROCESSING, PROCESSED, ERROR
   errorMessage  String?   @db.Text
