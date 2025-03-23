@@ -48,21 +48,39 @@ class YnetNewsScraper:
         print(f"Encontrados {len(article_links)} links de artigos")
         return article_links
     
-    def download_image(self, image_url):
-        """Baixa a imagem e salva localmente"""
+    def download_image(self, image_url, article_title=None):
+        """Baixa a imagem e salva localmente usando o título do artigo como referência"""
         try:
             if not image_url:
                 return None
                 
             print(f"Baixando imagem: {image_url}")
             
-            # Gerar nome de arquivo único baseado em UUID
+            # Gerar nome de arquivo baseado no título do artigo ou usar UUID se não disponível
+            if article_title:
+                # Limpar o título para usar como nome de arquivo
+                filename_base = re.sub(r'[^\w\s-]', '', article_title.lower())  # Remove caracteres especiais
+                filename_base = re.sub(r'\s+', '-', filename_base).strip('-')  # Substitui espaços por hífens
+                # Limitar o tamanho do nome do arquivo
+                filename_base = filename_base[:50]
+            else:
+                filename_base = f"ynet-{uuid.uuid4().hex[:8]}"
+            
+            # Adicionar extensão do arquivo
             image_extension = os.path.splitext(urlparse(image_url).path)[1]
             if not image_extension:
                 image_extension = '.jpg'  # Extensão padrão se não for possível determinar
                 
-            filename = f"ynet-{uuid.uuid4().hex}{image_extension}"
+            # Criar nome inicial do arquivo
+            filename = f"{filename_base}{image_extension}"
             save_path = os.path.join(self.image_dir, filename)
+            
+            # Verificar se o arquivo já existe e adicionar código único se necessário
+            counter = 1
+            while os.path.exists(save_path):
+                filename = f"{filename_base}-{counter}{image_extension}"
+                save_path = os.path.join(self.image_dir, filename)
+                counter += 1
             
             # Fazer a requisição e salvar a imagem
             response = requests.get(image_url, headers=self.headers, stream=True)
@@ -144,7 +162,7 @@ class YnetNewsScraper:
         if main_image and main_image.get('src'):
             main_image_url = main_image.get('src')
             print(f"Imagem principal encontrada: {main_image_url}")
-            main_image_local_path = self.download_image(main_image_url)
+            main_image_local_path = self.download_image(main_image_url, title)
         
         # Método 2: procurar pela div que contém a imagem principal
         if not main_image_url:
@@ -154,7 +172,7 @@ class YnetNewsScraper:
                 if img_tag and img_tag.get('src'):
                     main_image_url = img_tag.get('src')
                     print(f"Imagem principal encontrada (método 2): {main_image_url}")
-                    main_image_local_path = self.download_image(main_image_url)
+                    main_image_local_path = self.download_image(main_image_url, title)
         
         # Extrair o conteúdo do artigo
         content_paragraphs = soup.find_all('div', class_='text_editor_paragraph')
@@ -176,7 +194,7 @@ class YnetNewsScraper:
             for img in img_tags:
                 if img.get('src') and img.get('src') != main_image_url:
                     img_url = img.get('src')
-                    img_local_path = self.download_image(img_url)
+                    img_local_path = self.download_image(img_url, f"{title}-content-img")
                     if img_local_path:
                         content_images.append({
                             'original_url': img_url,
