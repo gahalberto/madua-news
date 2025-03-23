@@ -32,7 +32,7 @@ export async function sendTelegramMessage(
       body: JSON.stringify({
         chat_id: options.chatId,
         text: message,
-        parse_mode: 'MarkdownV2',
+        parse_mode: 'HTML',
         disable_web_page_preview: false,
       }),
     });
@@ -78,12 +78,7 @@ export async function notifyNewPost(post: {
   const blogUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://madua.com.br';
   const postUrl = `${blogUrl}/noticias/${post.slug}`;
   
-  // Escapar caracteres especiais do Markdown
-  const escapedTitle = post.title.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
-  const escapedExcerpt = post.excerpt.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
-  const escapedUrl = postUrl.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
-  
-  const message = `📰 ${escapedTitle}\n\n${escapedExcerpt}\n\n[Leia mais](${escapedUrl})\n@maduabrasil`;
+  const message = `📰 <b>${post.title}</b>\n\n${post.excerpt}\n\n<a href="${postUrl}">Leia mais</a>\n@maduabrasil`;
 
   return await sendTelegramMessage(
     { botToken, chatId },
