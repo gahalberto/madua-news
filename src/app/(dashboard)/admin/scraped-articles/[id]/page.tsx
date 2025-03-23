@@ -9,10 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { ProcessButton } from '../components/ProcessButton';
 import { DeleteButton } from '../components/DeleteButton';
-import dynamic from 'next/dynamic';
-
-const ImageGallery = dynamic(() => import('./ImageGallery'), { ssr: false });
-const MainImage = dynamic(() => import('./MainImage'), { ssr: false });
+import ImageSection from './ImageSection';
 
 // Definir a interface para os artigos extraídos
 interface ScrapedArticle {
@@ -184,12 +181,10 @@ export default async function ScrapedArticleDetailsPage({ params }: { params: { 
             </p>
           </div>
 
-          {mainImagePath && (
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold mb-2">Imagem Principal</h2>
-              <MainImage imagePath={mainImagePath} />
-            </div>
-          )}
+          <ImageSection
+            mainImagePath={mainImagePath}
+            contentImages={contentImages}
+          />
 
           {article.description && (
             <div className="mb-4">
@@ -204,13 +199,6 @@ export default async function ScrapedArticleDetailsPage({ params }: { params: { 
               <p className="text-gray-700 whitespace-pre-wrap">{article.content}</p>
             </div>
           </div>
-
-          {contentImages.length > 0 && (
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold mb-2">Imagens do Conteúdo</h2>
-              <ImageGallery images={contentImages} />
-            </div>
-          )}
 
           {article.post ? (
             <ProcessedArticleSection
