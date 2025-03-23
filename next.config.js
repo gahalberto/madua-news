@@ -137,16 +137,16 @@ const nextConfig = {
       },
     ];
   },
-  experimental: {
-    serverComponentsExternalPackages: ['yfinance', 'lxml', 'pandas'],
-  },
+  output: 'standalone',
   // Opções para ignorar erros durante o build
   typescript: {
     ignoreBuildErrors: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
-  }
+  },
+  experimental: {},
+  serverExternalPackages: ['yfinance', 'lxml', 'pandas'],
 };
 
 module.exports = nextConfig; 

@@ -77,14 +77,14 @@ export async function notifyNewPost(post: {
   
   const blogUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://madua.com.br';
   const postUrl = `${blogUrl}/noticias/${post.slug}`;
-  
+  console.log(postUrl);
   // Formatação HTML com quebras de linha explícitas e link clicável
   const message = `
 📰 <b>${post.title}</b>
 
 ${post.excerpt}
 
-<a href="https://madua.com.br">👉 Clique aqui para ler mais</a>
+<a href="${postUrl}">👉 Clique aqui para ler mais</a>
 @maduabrasil
 `.trim();
 
