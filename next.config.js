@@ -44,7 +44,11 @@ const nextConfig = {
       'loremflickr.com',
       'picsum.photos',
       'cdn.onesignal.com',
-      'madua.com.br'
+      'madua.com.br',
+      'lh3.googleusercontent.com',
+      'github.com',
+      'avatars.githubusercontent.com',
+      'images.unsplash.com'
     ],
     unoptimized: true,
     minimumCacheTTL: 60,
@@ -133,7 +137,9 @@ const nextConfig = {
       },
     ];
   },
-  experimental: { },
+  experimental: {
+    serverComponentsExternalPackages: ['yfinance', 'lxml', 'pandas'],
+  },
   // Opções para ignorar erros durante o build
   typescript: {
     ignoreBuildErrors: true,

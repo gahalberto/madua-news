@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import Image from "next/image";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { notFound } from "next/navigation";
@@ -8,6 +9,10 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { ProcessButton } from '../components/ProcessButton';
 import { DeleteButton } from '../components/DeleteButton';
+import dynamic from 'next/dynamic';
+
+const ImageGallery = dynamic(() => import('./ImageGallery'), { ssr: false });
+const MainImage = dynamic(() => import('./MainImage'), { ssr: false });
 
 // Definir a interface para os artigos extraídos
 interface ScrapedArticle {
@@ -27,6 +32,7 @@ interface ScrapedArticle {
     title: string;
     slug: string | null;
   } | null;
+  rawData: string | null;
 }
 
 async function getScrapedArticle(id: string): Promise<ScrapedArticle | null> {
@@ -114,6 +120,25 @@ export default async function ScrapedArticleDetailsPage({ params }: { params: { 
     notFound();
   }
 
+  // Extrair informações de imagem do rawData (se existir)
+  let mainImagePath = null;
+  let contentImages: Array<{ original_url: string; local_path: string }> = [];
+  
+  try {
+    if (article.rawData) {
+      const rawData = JSON.parse(article.rawData);
+      if (rawData.main_image && rawData.main_image.local_path) {
+        mainImagePath = rawData.main_image.local_path;
+      }
+      
+      if (Array.isArray(rawData.content_images)) {
+        contentImages = rawData.content_images;
+      }
+    }
+  } catch (error) {
+    console.error("Erro ao processar dados brutos do artigo:", error);
+  }
+
   return (
     <div className="container mx-auto py-8 max-w-5xl">
       <div className="mb-6">
@@ -159,6 +184,13 @@ export default async function ScrapedArticleDetailsPage({ params }: { params: { 
             </p>
           </div>
 
+          {mainImagePath && (
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold mb-2">Imagem Principal</h2>
+              <MainImage imagePath={mainImagePath} />
+            </div>
+          )}
+
           {article.description && (
             <div className="mb-4">
               <h2 className="text-lg font-semibold mb-2">Descrição</h2>
@@ -172,6 +204,13 @@ export default async function ScrapedArticleDetailsPage({ params }: { params: { 
               <p className="text-gray-700 whitespace-pre-wrap">{article.content}</p>
             </div>
           </div>
+
+          {contentImages.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold mb-2">Imagens do Conteúdo</h2>
+              <ImageGallery images={contentImages} />
+            </div>
+          )}
 
           {article.post ? (
             <ProcessedArticleSection
