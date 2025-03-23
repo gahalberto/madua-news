@@ -75,9 +75,10 @@ export async function notifyNewPost(post: {
     return { success: false, error: 'Configurações do Telegram não encontradas' };
   }
   
-  const blogUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://madua.com.br';
+  const blogUrl = 'https://madua.com.br';
   const postUrl = `${blogUrl}/noticias/${post.slug}`;
   console.log(postUrl);
+  console.log(blogUrl);
   // Formatação HTML com quebras de linha explícitas e link clicável
   const message = `
 📰 <b>${post.title}</b>
