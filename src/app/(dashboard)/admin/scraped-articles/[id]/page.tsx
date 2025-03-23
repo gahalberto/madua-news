@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { ProcessButton } from '../components/ProcessButton';
+import { DeleteButton } from '../components/DeleteButton';
 
 // Definir a interface para os artigos extraídos
 interface ScrapedArticle {
@@ -128,7 +129,7 @@ export default async function ScrapedArticleDetailsPage({ params }: { params: { 
         <div className="p-6">
           <div className="flex justify-between items-start mb-4">
             <h1 className="text-2xl font-bold text-gray-900">{article.title}</h1>
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
               <span
                 className={`text-sm px-3 py-1 rounded-full ${
                   article.status === 'PROCESSED'
@@ -142,6 +143,7 @@ export default async function ScrapedArticleDetailsPage({ params }: { params: { 
               >
                 {statusTranslation[article.status]}
               </span>
+              <DeleteButton articleId={article.id} />
             </div>
           </div>
 

@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { RunScraperButton } from "./components/RunScraperButton";
 import { ProcessAllButton } from "./components/ProcessAllButton";
+import { DeleteButton } from './components/DeleteButton';
 
 export const metadata: Metadata = {
   title: "Gerenciamento de Artigos Extraídos",
@@ -164,19 +165,23 @@ export default async function ScrapedArticlesPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <Link
-                        href={`/admin/scraped-articles/${article.id}`}
-                        className="text-indigo-600 hover:text-indigo-900 mr-3"
-                      >
-                        Detalhes
-                      </Link>
-                      <Link
-                        href={article.sourceUrl}
-                        target="_blank"
-                        className="text-gray-600 hover:text-gray-900"
-                      >
-                        Original
-                      </Link>
+                      <div className="flex gap-2 items-center">
+                        {article.status === 'PROCESSED' && article.postId && (
+                          <Link
+                            href={`/admin/blog/${article.postId}`}
+                            className="text-blue-500 hover:text-blue-700 text-sm"
+                          >
+                            Ver post
+                          </Link>
+                        )}
+                        <Link
+                          href={`/admin/scraped-articles/${article.id}`}
+                          className="text-blue-500 hover:text-blue-700 text-sm"
+                        >
+                          Detalhes
+                        </Link>
+                        <DeleteButton articleId={article.id} />
+                      </div>
                     </td>
                   </tr>
                 );
