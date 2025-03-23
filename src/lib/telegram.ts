@@ -15,13 +15,11 @@ type TelegramOptions = {
  * 
  * @param options Configurações do Telegram (token do bot e ID do chat)
  * @param message Mensagem a ser enviada
- * @param url URL opcional para o botão "Ler mais"
  * @returns Resposta da API do Telegram
  */
 export async function sendTelegramMessage(
   options: TelegramOptions, 
-  message: string,
-  url?: string
+  message: string
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
     const apiUrl = `https://api.telegram.org/bot${options.botToken}/sendMessage`;
@@ -35,14 +33,6 @@ export async function sendTelegramMessage(
         chat_id: options.chatId,
         text: message,
         disable_web_page_preview: false,
-        reply_markup: url ? {
-          inline_keyboard: [[
-            {
-              text: '🔗 Ler no nosso site',
-              url: url
-            }
-          ]]
-        } : undefined
       }),
     });
 
@@ -87,11 +77,10 @@ export async function notifyNewPost(post: {
   const blogUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://madua.com.br';
   const postUrl = `${blogUrl}/noticias/${post.slug}`;
   
-  const message = `📰 ${post.title}\n\n${post.excerpt}\n\n@maduabrasil`;
+  const message = `📰 ${post.title}\n\n${post.excerpt}\n\nLeia mais\n${postUrl}\n@maduabrasil`;
 
   return await sendTelegramMessage(
     { botToken, chatId },
-    message,
-    postUrl
+    message
   );
 } 
