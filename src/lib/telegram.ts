@@ -84,7 +84,7 @@ export async function notifyNewPost(post: {
 
 ${post.excerpt}
 
-<a href="${postUrl}">👉 Clique aqui para ler mais</a>
+<a href="https://madua.com.br">👉 Clique aqui para ler mais</a>
 @maduabrasil
 `.trim();
 
