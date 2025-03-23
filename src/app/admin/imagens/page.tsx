@@ -34,7 +34,7 @@ export default function AdminImagesPage() {
   const [folders, setFolders] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedFolder, setSelectedFolder] = useState('');
+  const [selectedFolder, setSelectedFolder] = useState('all_folders');
   const [selectedImage, setSelectedImage] = useState<ImageItem | null>(null);
   const [copying, setCopying] = useState(false);
 
@@ -57,7 +57,7 @@ export default function AdminImagesPage() {
     try {
       const params = new URLSearchParams();
       if (search) params.append('search', search);
-      if (selectedFolder) params.append('folder', selectedFolder);
+      if (selectedFolder && selectedFolder !== 'all_folders') params.append('folder', selectedFolder);
       
       const response = await fetch(`/api/admin/images?${params.toString()}`);
       
@@ -133,7 +133,7 @@ export default function AdminImagesPage() {
               <SelectValue placeholder="Selecionar pasta" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas as pastas</SelectItem>
+              <SelectItem value="all_folders">Todas as pastas</SelectItem>
               {folders.map((folder) => (
                 <SelectItem key={folder} value={folder}>
                   {folder}
