@@ -78,7 +78,15 @@ export async function notifyNewPost(post: {
   const blogUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://madua.com.br';
   const postUrl = `${blogUrl}/noticias/${post.slug}`;
   
-  const message = `📰 <b>${post.title}</b>\n\n${post.excerpt}\n\n<a href="${postUrl}">Leia mais</a>\n@maduabrasil`;
+  // Formatação HTML com quebras de linha explícitas e link clicável
+  const message = `
+📰 <b>${post.title}</b>
+
+${post.excerpt}
+
+<a href="${postUrl}">👉 Clique aqui para ler mais</a>
+@maduabrasil
+`.trim();
 
   return await sendTelegramMessage(
     { botToken, chatId },
