@@ -112,7 +112,25 @@ const nextConfig = {
             value: 'public, max-age=31536000, immutable',
           },
         ],
+      },
+      {
+        source: '/banners/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
       }
+    ];
+  },
+  // Configuração para servir arquivos estáticos
+  async rewrites() {
+    return [
+      {
+        source: '/banners/:path*',
+        destination: '/banners/:path*',
+      },
     ];
   },
   experimental: { },

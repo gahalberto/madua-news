@@ -1,0 +1,22 @@
+# Instruções para configurar o Nginx para servir os arquivos de banner
+# Adicione este bloco dentro da configuração do seu servidor (server block) no Nginx
+
+# Dentro do bloco server { ... } adicione:
+
+    # Servir arquivos estáticos da pasta banners
+    location /banners/ {
+        alias /var/www/madua/public/banners/;
+        try_files $uri $uri/ =404;
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000";
+        access_log off;
+    }
+
+# Depois de adicionar a configuração, verifique a sintaxe do Nginx:
+# sudo nginx -t
+
+# Se a sintaxe estiver correta, reinicie o Nginx:
+# sudo systemctl restart nginx
+
+# Alternativamente, você pode recarregar a configuração sem reiniciar:
+# sudo systemctl reload nginx 
