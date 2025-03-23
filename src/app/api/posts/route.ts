@@ -9,6 +9,9 @@ type PostFilter = {
   authorId?: string;
 };
 
+// Imagem padrão para posts
+const DEFAULT_POST_IMAGE = "https://madua.com.br/blog-images/34df77b2-4a8a-43c7-9bdf-59ad8b9f6bd6.jpg";
+
 // GET - Listar todos os posts
 export async function GET(req: Request) {
   try {
@@ -108,7 +111,7 @@ export async function POST(req: Request) {
         content: body.content,
         excerpt: body.excerpt,
         slug: body.slug,
-        imageUrl: body.imageUrl || null,
+        imageUrl: body.imageUrl || DEFAULT_POST_IMAGE,
         published: body.published || false,
         metaTitle: body.metaTitle,
         metaDescription: body.metaDescription,

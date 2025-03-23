@@ -59,6 +59,9 @@ export async function GET(
   }
 }
 
+// Imagem padrão para posts
+const DEFAULT_POST_IMAGE = "https://madua.com.br/blog-images/34df77b2-4a8a-43c7-9bdf-59ad8b9f6bd6.jpg";
+
 // PATCH - Atualizar um post
 export async function PATCH(
   req: Request,
@@ -75,94 +78,35 @@ export async function PATCH(
       );
     }
     
-    const userId = session.user.id;
-    // Usar await para acessar params.id
-    const { id } = await Promise.resolve(params);
     const body = await req.json();
     
-    console.log("[DEBUG] Atualizando post com ID:", id);
-    console.log("[DEBUG] Dados recebidos:", JSON.stringify({
-      title: body.title,
-      contentLength: body.content?.length || 0,
-      imageUrl: body.imageUrl,
-      published: body.published,
-      categoryId: body.categoryId
-    }));
+    // Validar dados obrigatórios
+    if (!body.title || !body.content) {
+      return NextResponse.json(
+        { error: "Título e conteúdo são obrigatórios" },
+        { status: 400 }
+      );
+    }
     
-    // Verificar se o post existe e pertence ao usuário
-    const existingPost = await prisma.post.findUnique({
+    // Atualizar o post
+    const post = await prisma.post.update({
       where: {
-        id,
+        id: params.id,
+      },
+      data: {
+        title: body.title,
+        content: body.content,
+        excerpt: body.excerpt,
+        slug: body.slug,
+        imageUrl: body.imageUrl || DEFAULT_POST_IMAGE,
+        published: body.published,
+        metaTitle: body.metaTitle,
+        metaDescription: body.metaDescription,
+        categoryId: body.categoryId,
       },
     });
     
-    if (!existingPost) {
-      console.log("[DEBUG] Post não encontrado com ID:", id);
-      return NextResponse.json(
-        { error: "Post não encontrado" },
-        { status: 404 }
-      );
-    }
-    
-    // Verificar se o usuário é o autor do post ou um administrador
-    if (existingPost.authorId !== userId && session.user.role !== "ADMIN") {
-      console.log("[DEBUG] Usuário não autorizado:", userId, "Post pertence a:", existingPost.authorId);
-      return NextResponse.json(
-        { error: "Não autorizado a editar este post" },
-        { status: 403 }
-      );
-    }
-    
-    // Validar dados antes de atualizar
-    if (body.title === '') {
-      return NextResponse.json(
-        { error: "O título não pode estar vazio" },
-        { status: 400 }
-      );
-    }
-    
-    if (body.content === '') {
-      return NextResponse.json(
-        { error: "O conteúdo não pode estar vazio" },
-        { status: 400 }
-      );
-    }
-    
-    const updateData = {
-      title: body.title !== undefined ? body.title : undefined,
-      content: body.content !== undefined ? body.content : undefined,
-      slug: body.slug !== undefined ? body.slug : undefined,
-      imageUrl: body.imageUrl !== undefined ? body.imageUrl : undefined,
-      published: body.published !== undefined ? body.published : undefined,
-      excerpt: body.excerpt !== undefined ? body.excerpt : undefined,
-      metaTitle: body.metaTitle !== undefined ? body.metaTitle : undefined,
-      metaDescription: body.metaDescription !== undefined ? body.metaDescription : undefined,
-      categoryId: body.categoryId !== undefined ? (body.categoryId || null) : undefined,
-    };
-    
-    console.log("[DEBUG] Dados de atualização:", JSON.stringify({
-      ...updateData,
-      contentLength: updateData.content?.length || 0
-    }));
-    
-    // Atualizar o post
-    try {
-      const updatedPost = await prisma.post.update({
-        where: {
-          id,
-        },
-        data: updateData,
-      });
-      
-      console.log("[DEBUG] Post atualizado com sucesso:", updatedPost.id);
-      return NextResponse.json(updatedPost);
-    } catch (dbError) {
-      console.error("[DEBUG] Erro ao atualizar no banco de dados:", dbError);
-      return NextResponse.json(
-        { error: "Erro ao atualizar post no banco de dados" },
-        { status: 500 }
-      );
-    }
+    return NextResponse.json(post);
   } catch (error) {
     console.error("Erro ao atualizar post:", error);
     return NextResponse.json(
@@ -188,43 +132,14 @@ export async function DELETE(
       );
     }
     
-    const userId = session.user.id;
-    // Usar await para acessar params.id
-    const { id } = await Promise.resolve(params);
-    
-    // Verificar se o post existe e pertence ao usuário
-    const existingPost = await prisma.post.findUnique({
-      where: {
-        id,
-      },
-    });
-    
-    if (!existingPost) {
-      return NextResponse.json(
-        { error: "Post não encontrado" },
-        { status: 404 }
-      );
-    }
-    
-    // Verificar se o usuário é o autor do post ou um administrador
-    if (existingPost.authorId !== userId && session.user.role !== "ADMIN") {
-      return NextResponse.json(
-        { error: "Não autorizado a excluir este post" },
-        { status: 403 }
-      );
-    }
-    
-    // Excluir o post (isso também excluirá os comentários relacionados devido à cascata)
+    // Excluir o post
     await prisma.post.delete({
       where: {
-        id,
+        id: params.id,
       },
     });
     
-    return NextResponse.json(
-      { message: "Post excluído com sucesso" },
-      { status: 200 }
-    );
+    return NextResponse.json({ message: "Post excluído com sucesso" });
   } catch (error) {
     console.error("Erro ao excluir post:", error);
     return NextResponse.json(
