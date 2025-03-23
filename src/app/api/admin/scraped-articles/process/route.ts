@@ -78,6 +78,36 @@ export async function POST(request: NextRequest) {
     });
 
     try {
+      // Extrai informações de imagem do artigo
+      let featuredImage = '';
+      let contentWithLocalImages = article.content;
+      
+      try {
+        if (article.rawData) {
+          const articleData = JSON.parse(article.rawData || '{}');
+          
+          // Processa imagem principal
+          if (articleData.main_image && articleData.main_image.local_path) {
+            featuredImage = articleData.main_image.local_path;
+            console.log(`Imagem principal encontrada: ${featuredImage}`);
+          }
+          
+          // Substitui URLs de imagem no conteúdo pelos caminhos locais
+          if (Array.isArray(articleData.content_images)) {
+            articleData.content_images.forEach((img: { original_url: string; local_path: string }) => {
+              if (img.original_url && img.local_path) {
+                contentWithLocalImages = contentWithLocalImages.replace(
+                  new RegExp(img.original_url, 'g'), 
+                  img.local_path
+                );
+              }
+            });
+          }
+        }
+      } catch (e) {
+        console.warn(`Erro ao processar dados de imagem do artigo: ${e}`);
+      }
+
       // Prompt para a API do DeepSeek
       const prompt = `
       Traduza e reescreva o seguinte artigo de notícias do inglês para o português brasileiro. É EXTREMAMENTE IMPORTANTE que você traduza completamente o conteúdo, não deixe NADA em inglês.
@@ -96,7 +126,7 @@ export async function POST(request: NextRequest) {
       DESCRIÇÃO ORIGINAL: ${article.description || "Sem descrição disponível"}
       
       CONTEÚDO ORIGINAL:
-      ${article.content}
+      ${contentWithLocalImages}
       
       FORMATO OBRIGATÓRIO DA RESPOSTA (apenas JSON, sem texto antes ou depois):
       {
@@ -160,7 +190,7 @@ export async function POST(request: NextRequest) {
             // Garantir que todos os campos obrigatórios existam
             parsedResponse.title = parsedResponse.title || article.title + ' [Tradução automática]';
             parsedResponse.excerpt = parsedResponse.excerpt || (article.description ? article.description.substring(0, 200) : `Artigo traduzido de ${article.source}`);
-            parsedResponse.content = parsedResponse.content || article.content;
+            parsedResponse.content = parsedResponse.content || contentWithLocalImages;
             parsedResponse.metaTitle = parsedResponse.metaTitle || parsedResponse.title.substring(0, 60);
             parsedResponse.metaDescription = parsedResponse.metaDescription || parsedResponse.excerpt.substring(0, 160);
             
@@ -223,7 +253,7 @@ export async function POST(request: NextRequest) {
         processedArticle = {
           title: `${article.title} [Tradução automática]`,
           excerpt: article.description ? article.description.substring(0, 200) : `Artigo de ${article.source}`,
-          content: article.content,
+          content: contentWithLocalImages,
           metaTitle: article.title.substring(0, 60),
           metaDescription: article.description ? article.description.substring(0, 160) : `Artigo de ${article.source}`,
         };
@@ -233,7 +263,7 @@ export async function POST(request: NextRequest) {
       let formattedContent = processedArticle.content;
       
       // Verificar se o conteúdo recebido parece ser o conteúdo original em inglês
-      const isLikelyOriginalContent = article.content.substring(0, 50).trim() === formattedContent.substring(0, 50).trim();
+      const isLikelyOriginalContent = contentWithLocalImages.substring(0, 50).trim() === formattedContent.substring(0, 50).trim();
       
       if (isLikelyOriginalContent) {
         console.log(`AVISO: Conteúdo parece não ter sido traduzido. Tentando tradução novamente...`);
@@ -243,7 +273,7 @@ export async function POST(request: NextRequest) {
           const simplifiedPrompt = `
           Traduza o seguinte texto do inglês para o português brasileiro:
           
-          ${article.content}
+          ${contentWithLocalImages}
           `;
           
           const fallbackCompletion = await deepseek.chat.completions.create({
@@ -257,7 +287,7 @@ export async function POST(request: NextRequest) {
           
           const fallbackResponse = fallbackCompletion.choices[0].message.content;
           
-          if (fallbackResponse && fallbackResponse.length > article.content.length * 0.5) {
+          if (fallbackResponse && fallbackResponse.length > contentWithLocalImages.length * 0.5) {
             console.log(`Tradução simplificada obtida com sucesso: ${fallbackResponse.length} caracteres`);
             formattedContent = fallbackResponse;
           }
@@ -285,7 +315,7 @@ export async function POST(request: NextRequest) {
             <p><strong>Aviso:</strong> Não foi possível traduzir este artigo adequadamente. Exibindo conteúdo original.</p>
           </div>
           <div class="original-content">
-            ${article.content.split('\n\n').map((p: string) => `<p>${p.trim()}</p>`).join('\n')}
+            ${contentWithLocalImages.split('\n\n').map((p: string) => `<p>${p.trim()}</p>`).join('\n')}
           </div>
         `;
         
@@ -364,6 +394,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Cria o post no blog
+      console.log(`Criando post com título: ${processedArticle.title} e imagem: ${featuredImage || 'sem imagem'}`);
       const post = await prisma.post.create({
         data: {
           title: processedArticle.title,
@@ -375,6 +406,7 @@ export async function POST(request: NextRequest) {
           published: true,
           authorId: adminUser.id,
           categoryId: newsCategory.id,
+          imageUrl: featuredImage || null,
         }
       });
 
