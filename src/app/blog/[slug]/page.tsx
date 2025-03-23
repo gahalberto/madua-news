@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { SocialShare } from '@/components/SocialShare'
+import { PostBanner } from '@/components/PostBanner'
+import Image from 'next/image'
 
 interface PostPageProps {
   params: {
@@ -41,6 +43,24 @@ export default async function PostPage({ params }: PostPageProps) {
         <div className="prose prose-lg mx-auto">
           {post.content}
         </div>
+
+        {/* Banner para compartilhamento */}
+        {post.bannerUrl ? (
+          <div className="mt-12 relative aspect-square w-full max-w-2xl mx-auto rounded-lg overflow-hidden">
+            <Image
+              src={post.bannerUrl}
+              alt={post.title}
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+        ) : (
+          <PostBanner 
+            title={post.title}
+            imageUrl={post.imageUrl}
+          />
+        )}
       </div>
     </article>
   )

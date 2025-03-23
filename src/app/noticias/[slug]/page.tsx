@@ -7,6 +7,7 @@ import { CommentForm } from "./CommentForm";
 import { SocialShare } from '@/components/SocialShare';
 import { TelegramShareButton } from '@/components/TelegramShareButton';
 import ViewCounter from "@/components/ViewCounter";
+import { PostBanner } from "@/components/PostBanner";
 
 // Buscar post pelo ID
 async function getBlogPost(slug: string) {
@@ -123,7 +124,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       images: post.imageUrl ? [post.imageUrl] : undefined,
     },
     alternates: {
-      canonical: `https://clubedorabino.com/noticias/${post.slug}`,
+      canonical: `https://madua.com.br/noticias/${post.slug}`,
     },
   };
 }
@@ -144,14 +145,21 @@ function MarkdownContent({ content }: { content: string }) {
 }
 
 export default async function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = await getBlogPost(params.slug);
-  const baseUrl = 'https://madua.com.br';
-  const shareUrl = `${baseUrl}/noticias/${post.slug}`;
-  const shareTitle = post.title;
-
+  // Garantir que params seja tratado como um objeto assíncrono
+  const { slug } = params;
+  console.log('Buscando post com slug:', slug);
+  
+  const post = await getBlogPost(slug);
+  
   if (!post) {
     notFound();
   }
+
+  console.log('Post encontrado, tem imageUrl?', !!post.imageUrl);
+  
+  const baseUrl = 'https://madua.com.br';
+  const shareUrl = `${baseUrl}/noticias/${post.slug}`;
+  const shareTitle = post.title;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -245,6 +253,26 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         <div className="prose prose-lg max-w-none mb-12">
           <MarkdownContent content={post.content} />
         </div>
+        
+        {/* Banner para compartilhamento */}
+        {post.bannerUrl ? (
+          <div className="my-12 relative aspect-square w-full max-w-2xl mx-auto rounded-lg overflow-hidden">
+            <Image
+              src={post.bannerUrl}
+              alt={post.title}
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+        ) : (
+          <div className="my-12">
+            <PostBanner 
+              title={post.title}
+              imageUrl={post.imageUrl}
+            />
+          </div>
+        )}
         
         {/* Seção de Comentários */}
         <section className="mt-12 border-t border-gray-200 pt-8">

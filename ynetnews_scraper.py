@@ -42,6 +42,39 @@ class YnetNewsScraper:
         print(f"Encontrados {len(article_links)} links de artigos")
         return article_links
     
+    def filter_unwanted_content(self, text):
+        """Filtra conteúdos indesejados do texto"""
+        # Lista de textos a serem filtrados
+        textos_indesejados = [
+            "Ynetnews", 
+            "Google Play", 
+            "Apple App Store", 
+            "Facebook", 
+            "Twitter", 
+            "Instagram", 
+            "Telegram",
+            "https://bit.ly/",  # URLs encurtados típicos nos artigos
+            "Follow Ynetnews",
+            "Get the Ynetnews app",
+            "smartphone"
+        ]
+        
+        # Remove linhas que contenham qualquer texto indesejado
+        filtered_lines = []
+        for line in text.split('\n'):
+            should_skip = any(texto in line for texto in textos_indesejados)
+            if not should_skip:
+                filtered_lines.append(line)
+        
+        # Remove padrões de mensagens de rodapé típicas
+        filtered_text = '\n'.join(filtered_lines)
+        
+        # Remove linhas vazias repetidas (mais de 2 quebras de linha seguidas)
+        while '\n\n\n' in filtered_text:
+            filtered_text = filtered_text.replace('\n\n\n', '\n\n')
+            
+        return filtered_text.strip()
+
     def extract_article_content(self, url):
         """Extrai o conteúdo de um artigo específico"""
         print(f"Extraindo conteúdo de: {url}")
@@ -73,12 +106,15 @@ class YnetNewsScraper:
             for span in spans:
                 content += span.text.strip() + "\n\n"
         
+        # Filtrar o conteúdo para remover textos indesejados
+        filtered_content = self.filter_unwanted_content(content)
+        
         # Criar e retornar o objeto de artigo
         article = {
             'url': url,
             'title': title,
             'description': subtitle,
-            'content': content.strip()
+            'content': filtered_content
         }
         
         return article

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma/client";
+import { generatePostBannerAndGetUrl } from "@/lib/postUtils";
 
 // GET - Obter um post específico
 export async function GET(
@@ -87,6 +88,28 @@ export async function PATCH(
         { status: 400 }
       );
     }
+
+    // Verificar se precisa gerar um novo banner
+    let bannerUrl = null;
+    const imageUrl = body.imageUrl || DEFAULT_POST_IMAGE;
+
+    // Se há uma imagem nova ou uma alteração no título, gerar novo banner
+    const existingPost = await prisma.post.findUnique({
+      where: { id: params.id },
+      select: { title: true, imageUrl: true }
+    });
+
+    const titleChanged = existingPost?.title !== body.title;
+    const imageChanged = existingPost?.imageUrl !== imageUrl;
+
+    if (titleChanged || imageChanged) {
+      console.log('Gerando novo banner para o post', { 
+        postId: params.id, 
+        titleChanged, 
+        imageChanged 
+      });
+      bannerUrl = await generatePostBannerAndGetUrl(imageUrl, body.title);
+    }
     
     // Atualizar o post
     const post = await prisma.post.update({
@@ -98,11 +121,13 @@ export async function PATCH(
         content: body.content,
         excerpt: body.excerpt,
         slug: body.slug,
-        imageUrl: body.imageUrl || DEFAULT_POST_IMAGE,
+        imageUrl: imageUrl,
         published: body.published,
         metaTitle: body.metaTitle,
         metaDescription: body.metaDescription,
         categoryId: body.categoryId,
+        // Atualizar bannerUrl se tiver um novo, ou manter o existente
+        ...(bannerUrl && { bannerUrl }),
       },
     });
     

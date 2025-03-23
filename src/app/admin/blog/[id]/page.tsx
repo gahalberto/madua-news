@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, use } from "react";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import ImageUploader from "@/components/admin/ImageUploader";
+import { BannerPreview } from "@/components/BannerPreview";
 import { logDebug } from "@/logs/editor-debug";
 
 // Importação dinâmica do editor para evitar problemas de SSR
@@ -36,8 +37,9 @@ interface TelegramPayload {
   slug: string;
 }
 
-export default function EditBlogPostPage({ params }: { params: { id: string } }) {
-  const id = params.id; // Usar params diretamente
+export default function EditBlogPostPage() {
+  const params = useParams();
+  const id = params?.id as string;
   
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -292,6 +294,11 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
     reader.onloadend = () => {
       const result = reader.result;
       if (typeof result === 'string') {
+        console.log('Nova imagem carregada:', {
+          fileName: file.name,
+          fileSize: file.size,
+          previewLength: result.length
+        });
         setImagePreview(result);
       }
     };
@@ -534,6 +541,22 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
                 Imagem principal do post. Recomendamos dimensões de 1200x630px.
               </p>
             </div>
+
+            {/* Preview do Banner */}
+            {formData.title && (imagePreview || formData.imageUrl) && (
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Preview do Banner para Redes Sociais
+                </label>
+                <div className="mb-2 text-sm text-gray-500">
+                  {imagePreview ? 'Usando imagem do preview' : 'Usando imagem existente'}
+                </div>
+                <BannerPreview
+                  title={formData.title}
+                  imageUrl={imagePreview || formData.imageUrl || ''}
+                />
+              </div>
+            )}
 
             {/* SEO */}
             <div className="col-span-2">

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma/client";
+import { generatePostBannerAndGetUrl } from "@/lib/postUtils";
 
 // Definir tipos para os filtros
 type PostFilter = {
@@ -103,6 +104,18 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
+    // Gerar o banner para o post
+    const imageUrl = body.imageUrl || DEFAULT_POST_IMAGE;
+    let bannerUrl = null;
+    
+    try {
+      console.log('Gerando banner para novo post', { title: body.title });
+      bannerUrl = await generatePostBannerAndGetUrl(imageUrl, body.title);
+    } catch (bannerError) {
+      console.error('Erro ao gerar banner para novo post:', bannerError);
+      // Continua com a criação do post mesmo sem banner
+    }
     
     // Criar o post
     const post = await prisma.post.create({
@@ -111,7 +124,8 @@ export async function POST(req: Request) {
         content: body.content,
         excerpt: body.excerpt,
         slug: body.slug,
-        imageUrl: body.imageUrl || DEFAULT_POST_IMAGE,
+        imageUrl: imageUrl,
+        bannerUrl: bannerUrl,
         published: body.published || false,
         metaTitle: body.metaTitle,
         metaDescription: body.metaDescription,
