@@ -1,0 +1,21 @@
+# Comandos para atualizar na VPS
+
+cd /var/www/madua
+
+# Gerar o cliente Prisma
+npx prisma generate
+
+# Criar e aplicar a migração
+npx prisma migrate dev --name add_push_subscriptions
+
+# Reconstruir o projeto
+npm run build
+
+# Verificar e configurar as pastas de imagens
+sudo bash scripts/ensure-image-folders.sh
+
+# Reiniciar a aplicação
+pm2 restart madua
+
+# Ver logs para verificar erros
+pm2 logs madua
