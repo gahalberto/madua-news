@@ -27,22 +27,19 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // Relações
-  accounts        Account[]
-  sessions        Session[]
-  courses         Course[]     @relation("TeacherCourses")
-  enrollments     Enrollment[]
-  progress        Progress[]
-  reviews         Review[]
-  posts           Post[]
-  comments        Comment[]
-  orders          Order[]
-  tasks           Task[]       @relation("AssignedTasks")
-  createdTasks    Task[]       @relation("TaskCreator")
-  projects        Project[]    @relation("ProjectMembers")
-  managedProjects Project[]    @relation("ProjectManager")
-  cartItems       CartItem[]
-  favorites       Favorite[]
-  categories      Category[]
+  accounts          Account[]
+  sessions          Session[]
+  courses           Course[]           @relation("TeacherCourses")
+  enrollments       Enrollment[]
+  progress          Progress[]
+  reviews           Review[]
+  posts             Post[]
+  comments          Comment[]
+  orders            Order[]
+  tasks             Task[]             @relation("AssignedTasks")
+  createdTasks      Task[]             @relation("TaskCreator")
+  projects          Project[]          @relation("ProjectMembers")
+  managedProjects   Project[]          @relation("ProjectManager")
   pushSubscriptions PushSubscription[]
 }
 
@@ -208,24 +205,24 @@ model Review {
 
 // Modelo de post para o blog
 model Post {
-  id              String    @id @default(cuid())
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id              String           @id @default(cuid())
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   title           String
-  slug            String?   @unique
+  slug            String?          @unique
   imageUrl        String?
-  bannerUrl       String?   // URL do banner gerado
-  featuredImage   String?   // Caminho da imagem principal
+  bannerUrl       String? // URL do banner gerado
+  featuredImage   String? // Caminho da imagem principal
   categoryId      String?
   metaTitle       String?
   metaDescription String?
   content         String
   excerpt         String?
-  published       Boolean   @default(false)
-  views           Int       @default(0)
+  published       Boolean          @default(false)
+  views           Int              @default(0)
   authorId        String
-  author          User      @relation(fields: [authorId], references: [id])
-  category        Category? @relation(fields: [categoryId], references: [id])
+  author          User             @relation(fields: [authorId], references: [id])
+  category        Category?        @relation(fields: [categoryId], references: [id])
   comments        Comment[]
   scrapedArticles ScrapedArticle[]
 
@@ -448,21 +445,21 @@ enum Priority {
 
 // Novo modelo para armazenar artigos extraídos
 model ScrapedArticle {
-  id            String    @id @default(cuid())
-  sourceUrl     String
-  title         String
-  description   String?   @db.Text
-  content       String    @db.Text
-  rawData       String?   @db.Text  // Dados brutos do artigo em formato JSON
-  source        String    // Fonte do artigo (ex: YNET_NEWS)
-  status        String    // PENDING, PROCESSING, PROCESSED, ERROR
-  errorMessage  String?   @db.Text
-  createdAt     DateTime  @default(now())
-  processedAt   DateTime?
-  
+  id           String    @id @default(cuid())
+  sourceUrl    String
+  title        String
+  description  String?   @db.Text
+  content      String    @db.Text
+  rawData      String?   @db.Text // Dados brutos do artigo em formato JSON
+  source       String // Fonte do artigo (ex: YNET_NEWS)
+  status       String // PENDING, PROCESSING, PROCESSED, ERROR
+  errorMessage String?   @db.Text
+  createdAt    DateTime  @default(now())
+  processedAt  DateTime?
+
   // Referência ao Post após processamento
-  postId        String?
-  post          Post?     @relation(fields: [postId], references: [id])
+  postId String?
+  post   Post?   @relation(fields: [postId], references: [id])
 }
 
 // Modelo para inscritos no Newsletter
@@ -480,7 +477,7 @@ model Contact {
   email     String
   subject   String
   message   String   @db.Text
-  type      String   // "message", "suggestion", "compliment", "business"
+  type      String // "message", "suggestion", "compliment", "business"
   status    String   @default("pending") // "pending", "read", "replied"
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -488,14 +485,14 @@ model Contact {
 
 // Modelo para armazenar assinaturas de notificações push
 model PushSubscription {
-  id        String    @id @default(cuid())
-  endpoint  String    @unique
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
   p256dh    String?
   auth      String?
   userId    String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relação com o usuário (opcional)
-  user      User?     @relation(fields: [userId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
 }
