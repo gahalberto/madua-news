@@ -1,5 +1,7 @@
 import { Metadata } from "next";
 import Footer from "@/components/shared/Footer";
+import { ReactNode } from 'react';
+import NotificationToggleWidget from '@/components/NotificationToggleWidget';
 
 export const metadata: Metadata = {
   title: {
@@ -22,10 +24,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function BlogLayout({
+export default function NoticiasLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="flex flex-col min-h-screen">
@@ -33,6 +35,7 @@ export default function BlogLayout({
         {children}
       </main>
       <Footer />
+      <NotificationToggleWidget />
     </div>
   );
 } 

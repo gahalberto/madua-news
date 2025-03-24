@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AdminLayout } from '@/components/layouts/AdminLayout';
 
 export default function NotificationsPage() {
   const router = useRouter();
@@ -70,10 +69,12 @@ export default function NotificationsPage() {
   };
 
   return (
-    <AdminLayout
-      title="Enviar Notificações Push"
-      description="Envie notificações push para os usuários do site"
-    >
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Enviar Notificações Push</h1>
+        <p className="text-gray-600">Envie notificações push para os usuários do site</p>
+      </div>
+
       <div className="bg-white shadow-md rounded-lg p-6">
         <h2 className="text-2xl font-bold mb-6">Enviar Notificação Push</h2>
 
@@ -186,6 +187,6 @@ export default function NotificationsPage() {
           </div>
         </form>
       </div>
-    </AdminLayout>
+    </div>
   );
 } 
