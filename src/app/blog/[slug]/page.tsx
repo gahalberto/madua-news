@@ -15,6 +15,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     },
     select: {
       title: true,
+      metaTitle: true,
       metaDescription: true,
       imageUrl: true,
     }
@@ -28,10 +29,10 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 
   return {
-    title: post.title,
+    title: post.metaTitle || post.title,
     description: post.metaDescription || `Leia o artigo completo: ${post.title}`,
     openGraph: {
-      title: post.title,
+      title: post.metaTitle || post.title,
       description: post.metaDescription || `Leia o artigo completo: ${post.title}`,
       images: [{ url: post.imageUrl || '/images/placeholder-news.jpg' }],
       type: 'article',
@@ -53,7 +54,9 @@ export async function generateStaticParams() {
     take: 20, // Pré-carregar os 20 posts mais recentes
   })
   
-  return posts.map(post => ({ slug: post.slug || '' }))
+  return posts.map(post => ({ 
+    slug: post.slug ?? '' 
+  }))
 }
 
 function ArticleHeader({ title, date, shareUrl, shareTitle }: { 
@@ -120,7 +123,7 @@ export default async function PostPage({ params }: PostPageProps) {
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://madua.com.br'
-  const shareUrl = `${baseUrl}/blog/${post.slug}`
+  const shareUrl = `${baseUrl}/blog/${post.slug || ''}`
   const shareTitle = post.title
 
   return (
