@@ -193,7 +193,12 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   experimental: {
-    optimizeCss: true,
+    optimizeCss: {
+      cssModules: true,
+      fontLoaders: [
+        { loader: '@next/font/google', options: { subsets: ['latin'] } },
+      ],
+    },
     optimizeServerReact: true,
   },
   serverExternalPackages: ['yfinance', 'lxml', 'pandas'],
