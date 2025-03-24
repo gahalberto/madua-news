@@ -28,16 +28,35 @@ async function runScraper(): Promise<{ success: boolean; message: string; detail
     // Tentar extrair estatísticas da saída
     let stats = { received: 0, saved: 0, duplicates: 0, errors: 0 };
     try {
-      // Procurar por uma linha JSON com estatísticas na saída
-      const statsMatch = stdout.match(/\{[\s\S]*?"stats"[\s\S]*?\}/);
-      if (statsMatch) {
-        const statsJson = JSON.parse(statsMatch[0]);
-        if (statsJson.stats) {
-          stats = statsJson.stats;
+      // Procurar por uma linha JSON com estatísticas na saída - regex mais robusto
+      const statsMatch = stdout.match(/\{"message"[^{]*"stats":\s*(\{[^}]+\})/);
+      if (statsMatch && statsMatch[1]) {
+        // Extrair apenas o objeto stats
+        try {
+          const statsObj = JSON.parse(`{${statsMatch[1].replace(/,$/, '')}}`);
+          stats = statsObj;
+          console.log('Estatísticas extraídas com sucesso:', stats);
+        } catch (innerError) {
+          console.warn('Erro ao parsear objeto de estatísticas:', innerError);
+          console.warn('Texto encontrado:', statsMatch[1]);
         }
+      } else {
+        // Alternativa: extrair valores diretamente das linhas de resumo
+        const receivedMatch = stdout.match(/Artigos recebidos: (\d+)/);
+        const savedMatch = stdout.match(/Artigos novos salvos: (\d+)/);
+        const duplicatesMatch = stdout.match(/Artigos duplicados ignorados: (\d+)/);
+        const errorsMatch = stdout.match(/Erros durante processamento: (\d+)/);
+        
+        if (receivedMatch) stats.received = parseInt(receivedMatch[1]);
+        if (savedMatch) stats.saved = parseInt(savedMatch[1]);
+        if (duplicatesMatch) stats.duplicates = parseInt(duplicatesMatch[1]);
+        if (errorsMatch) stats.errors = parseInt(errorsMatch[1]);
+        
+        console.log('Estatísticas extraídas do texto de resumo:', stats);
       }
     } catch (parseError) {
       console.warn('Não foi possível extrair estatísticas da saída:', parseError);
+      console.warn('Trecho da saída:', stdout.substring(0, 500) + '...');
     }
     
     // Criar mensagem com base nas estatísticas

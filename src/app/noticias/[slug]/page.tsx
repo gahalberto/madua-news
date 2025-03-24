@@ -228,14 +228,24 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
           {/* Imagem de Destaque */}
           {post.imageUrl && (
             <div className="relative w-full h-96 rounded-lg overflow-hidden mb-4">
-              <Image
-                src={post.imageUrl}
-                alt={post.title}
-                fill
-                priority
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              />
+              {post.imageUrl.includes('/article-images/') ? (
+                // Para imagens da pasta article-images, usar img normal ao invés do componente Image
+                <img
+                  src={post.imageUrl}
+                  alt={post.title}
+                  className="object-cover w-full h-full"
+                />
+              ) : (
+                // Para outras imagens, continuar usando o componente Image do Next.js
+                <Image
+                  src={post.imageUrl}
+                  alt={post.title}
+                  fill
+                  priority
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                />
+              )}
             </div>
           )}
 
@@ -335,13 +345,21 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                   <article className="bg-white rounded-lg shadow-md overflow-hidden h-full">
                     {relatedPost.imageUrl && (
                       <div className="relative h-40 w-full">
-                        <Image
-                          src={relatedPost.imageUrl}
-                          alt={relatedPost.title}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
-                        />
+                        {relatedPost.imageUrl.includes('/article-images/') ? (
+                          <img
+                            src={relatedPost.imageUrl}
+                            alt={relatedPost.title}
+                            className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <Image
+                            src={relatedPost.imageUrl}
+                            alt={relatedPost.title}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
+                          />
+                        )}
                       </div>
                     )}
                     <div className="p-4">

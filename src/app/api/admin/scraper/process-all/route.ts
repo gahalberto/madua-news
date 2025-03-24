@@ -111,15 +111,26 @@ async function processArticle(articleId: string) {
     console.log(`Enviando prompt para DeepSeek com ${prompt.length} caracteres`);
 
     // Chama a API do DeepSeek
-    const completion = await deepseek.chat.completions.create({
-      model: "deepseek-chat",
-      messages: [
-        { role: "system", content: "Você é um assistente especializado em tradução e adaptação de artigos de notícias para o português brasileiro. Responda apenas com JSON válido." },
-        { role: "user", content: prompt }
-      ],
-      temperature: 0.7,
-      response_format: { type: "json_object" }
-    });
+    let completion;
+    try {
+      completion = await deepseek.chat.completions.create({
+        model: "deepseek-chat",
+        messages: [
+          { role: "system", content: "Você é um assistente especializado em tradução e adaptação de artigos de notícias para o português brasileiro. Responda apenas com JSON válido." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.7,
+        response_format: { type: "json_object" }
+      });
+    } catch (apiError) {
+      console.error(`❌ Erro na chamada à API Deepseek: ${apiError instanceof Error ? apiError.message : 'Erro desconhecido'}`);
+      // Marcar artigo como com erro
+      await prisma.scrapedArticle.update({
+        where: { id: articleId },
+        data: { status: 'ERROR', errorMessage: `Erro na API: ${apiError instanceof Error ? apiError.message : 'Erro desconhecido'}` }
+      });
+      throw new Error(`Erro na chamada à API Deepseek: ${apiError instanceof Error ? apiError.message : 'Erro desconhecido'}`);
+    }
 
     // Processa a resposta
     const aiResponse = completion.choices[0].message.content;
@@ -171,8 +182,23 @@ async function processArticle(articleId: string) {
           console.log("JSON extraído de texto: ", Object.keys(processedArticle).join(', '));
         } catch (e) {
           console.error("Falha ao extrair JSON de texto:", e);
-          console.log("Resposta recebida:", aiResponse);
-          throw new Error("Formato de resposta inválido da API DeepSeek");
+          
+          // Verificar se é possível corrigir o JSON manualmente
+          try {
+            // Remover caracteres problemáticos comuns
+            let cleanedJson = jsonMatch[0]
+              .replace(/[\u0000-\u001F]+/g, '') // caracteres de controle
+              .replace(/,\s*}/g, '}')           // vírgulas antes de chaves fechadas
+              .replace(/,\s*]/g, ']');          // vírgulas antes de colchetes fechados
+              
+            processedArticle = JSON.parse(cleanedJson);
+            console.log("JSON corrigido manualmente: ", Object.keys(processedArticle).join(', '));
+          } catch (fixError) {
+            // Se ainda falhar, registrar o erro e o conteúdo para diagnóstico
+            console.error("Falha ao corrigir JSON manualmente:", fixError);
+            console.log("Resposta recebida:", aiResponse);
+            throw new Error("Formato de resposta inválido da API DeepSeek");
+          }
         }
       } else {
         console.log("Resposta recebida:", aiResponse);

@@ -38,6 +38,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
+  // Verificar se a URL é uma requisição de imagem de article-images através do componente Image do Next.js
+  if (pathname.startsWith('/_next/image') && request.nextUrl.searchParams.has('url')) {
+    const imageUrl = request.nextUrl.searchParams.get('url');
+    
+    if (imageUrl && imageUrl.includes('/article-images/')) {
+      // Redirecionar diretamente para o arquivo estático no caminho original
+      // Isso evita que o Next.js tente processar imagens que devem ser servidas estaticamente
+      const originalImagePath = imageUrl;
+      return NextResponse.redirect(new URL(originalImagePath, request.url));
+    }
+  }
+
   // Se o usuário estiver autenticado e tiver as permissões necessárias, permitir acesso
   return NextResponse.next();
 }
@@ -54,5 +66,7 @@ export const config = {
      * 5. all root files inside /public (e.g. /favicon.ico)
      */
     "/((?!api|_next|fonts|examples|[\\w-]+\\.\\w+).*)",
+    '/_next/image',
+    '/article-images/:path*',
   ],
 }; 

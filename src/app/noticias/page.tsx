@@ -93,13 +93,21 @@ export default async function NoticiasPage() {
             {posts.map((post) => (
               <article key={post.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
                 <Link href={`/noticias/${post.slug}`} className="block relative aspect-video">
-                  <Image
-                    src={post.imageUrl || '/images/news-placeholder.jpg'}
-                    alt={post.title}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  />
+                  {post.imageUrl?.includes('/article-images/') ? (
+                    <img
+                      src={post.imageUrl}
+                      alt={post.title}
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <Image
+                      src={post.imageUrl || '/images/news-placeholder.jpg'}
+                      alt={post.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  )}
                 </Link>
                 <div className="p-6">
                   {post.category && (

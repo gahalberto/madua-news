@@ -13,12 +13,20 @@ export function PostBanner({ title, imageUrl }: PostBannerProps) {
     <div className="relative aspect-square w-full max-w-2xl mx-auto rounded-lg overflow-hidden bg-gradient-to-b from-indigo-500 to-purple-600">
       {imageUrl && (
         <div className="absolute inset-0 opacity-50">
-          <Image
-            src={imageUrl}
-            alt={title}
-            fill
-            className="object-cover"
-          />
+          {imageUrl.includes('/article-images/') ? (
+            <img
+              src={imageUrl}
+              alt={title}
+              className="object-cover w-full h-full"
+            />
+          ) : (
+            <Image
+              src={imageUrl}
+              alt={title}
+              fill
+              className="object-cover"
+            />
+          )}
         </div>
       )}
       <div className="absolute inset-0 bg-black/40" />

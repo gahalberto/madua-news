@@ -75,10 +75,21 @@ export async function notifyNewPost(post: {
     return { success: false, error: 'Configurações do Telegram não encontradas' };
   }
   
-  const blogUrl = 'https://madua.com.br';
-  const postUrl = `${blogUrl}/noticias/${post.slug}`;
-  console.log(postUrl);
-  console.log(blogUrl);
+  // Usar a URL do site a partir das variáveis de ambiente, com fallback para o valor padrão
+  const blogUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://madua.com.br';
+  
+  // Construir URL do post verificando se o slug já tem estrutura completa
+  let postUrl;
+  if (post.slug.startsWith('http')) {
+    // Se o slug já é uma URL completa, usar diretamente
+    postUrl = post.slug;
+  } else {
+    // Caso contrário, construir a URL normalmente
+    postUrl = `${blogUrl}/noticias/${post.slug}`;
+  }
+  
+  console.log(`Enviando notificação para o Telegram com URL: ${postUrl}`);
+  
   // Formatação HTML com quebras de linha explícitas e link clicável
   const message = `
 📰 <b>${post.title}</b>

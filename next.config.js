@@ -67,7 +67,7 @@ const nextConfig = {
       'avatars.githubusercontent.com',
       'images.unsplash.com'
     ],
-    unoptimized: false,
+    unoptimized: true,
   },
   // Otimizações de performance
   poweredByHeader: false,
@@ -181,6 +181,10 @@ const nextConfig = {
       {
         source: '/banners/:path*',
         destination: '/banners/:path*',
+      },
+      {
+        source: '/article-images/:path*',
+        destination: '/article-images/:path*',
       },
     ];
   },

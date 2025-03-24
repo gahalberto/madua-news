@@ -152,95 +152,113 @@ export async function POST(request: NextRequest) {
           console.log(`Tentativa ${attempts + 1} de processar o artigo ${articleId} com DeepSeek...`);
           
           // Chama a API do DeepSeek
-          const completion = await deepseek.chat.completions.create({
-            model: "deepseek-chat",
-            messages: [
-              { role: "system", content: "Você é um assistente especializado em tradução e adaptação de artigos de notícias para o português brasileiro. Responda apenas com JSON." },
-              { role: "user", content: prompt }
-            ],
-            temperature: 0.7,
-            response_format: { type: "json_object" }
-          });
-          
-          // Processar e validar a resposta
-          const aiResponse = completion.choices[0].message.content;
-          console.log("Resposta da DeepSeek COMPLETA: ", aiResponse);
-          
-          if (!aiResponse) {
-            throw new Error("Resposta vazia da API");
-          }
-          
-          console.log(`Resposta recebida da DeepSeek (primeiros 150 caracteres): ${aiResponse.substring(0, 150)}...`);
-          
           try {
-            // Parsear a resposta como JSON
-            const parsedResponse = JSON.parse(aiResponse);
+            const completion = await deepseek.chat.completions.create({
+              model: "deepseek-chat",
+              messages: [
+                { role: "system", content: "Você é um assistente especializado em tradução e adaptação de artigos de notícias para o português brasileiro. Responda apenas com JSON." },
+                { role: "user", content: prompt }
+              ],
+              temperature: 0.7,
+              response_format: { type: "json_object" }
+            });
             
-            // Verificar campos obrigatórios
-            console.log(`Campos encontrados: ${Object.keys(parsedResponse).join(', ')}`);
-            console.log(`Tamanho do título: ${parsedResponse.title?.length || 0} caracteres`);
-            console.log(`Tamanho do conteúdo: ${parsedResponse.content?.length || 0} caracteres`);
-            console.log(`conteudo escrito: ${parsedResponse.content || 'Não encontrado'}`);
-            console.log(`Conteúdo (primeiros 200 caracteres): "${parsedResponse.content?.substring(0, 200)}..."`);
+            // Processar e validar a resposta
+            const aiResponse = completion.choices[0].message.content;
+            console.log("Resposta da DeepSeek COMPLETA: ", aiResponse);
             
-            // Verificações adicionais de qualidade da tradução
-            const hasEnglishOnly = /^[a-zA-Z0-9\s.,!?:;()\-"']+$/.test(parsedResponse.content?.substring(0, 100) || '');
-            const hasPtContent = /[áàâãéèêíïóôõöúüçÁÀÂÃÉÈÊÍÏÓÔÕÖÚÜÇ]/.test(parsedResponse.content || '');
-            
-            // Garantir que todos os campos obrigatórios existam
-            parsedResponse.title = parsedResponse.title || article.title + ' [Tradução automática]';
-            parsedResponse.excerpt = parsedResponse.excerpt || (article.description ? article.description.substring(0, 200) : `Artigo traduzido de ${article.source}`);
-            parsedResponse.content = parsedResponse.content || contentWithLocalImages;
-            parsedResponse.metaTitle = parsedResponse.metaTitle || parsedResponse.title.substring(0, 60);
-            parsedResponse.metaDescription = parsedResponse.metaDescription || parsedResponse.excerpt.substring(0, 160);
-            
-            if (!parsedResponse.title || !parsedResponse.content || !parsedResponse.excerpt) {
-              console.warn(`Resposta da DeepSeek não possui campos obrigatórios. Tentando novamente...`);
-              attempts++;
-              await sleep(1000 * attempts); // Backoff exponencial
-              continue;
+            if (!aiResponse) {
+              throw new Error("Resposta vazia da API");
             }
             
-            if (parsedResponse.content.length < 100) {
-              console.warn(`Conteúdo traduzido muito curto (${parsedResponse.content.length} caracteres). Tentando novamente...`);
-              attempts++;
-              await sleep(1000 * attempts);
-              continue;
-            }
+            console.log(`Resposta recebida da DeepSeek (primeiros 150 caracteres): ${aiResponse.substring(0, 150)}...`);
             
-            if (hasEnglishOnly || !hasPtContent) {
-              console.warn("Conteúdo parece estar em inglês ou não contém caracteres portugueses. Tentando novamente...");
-              attempts++;
-              await sleep(1000 * attempts);
-              continue;
-            }
-            
-            // Se chegou aqui, a resposta é válida
-            processedArticle = parsedResponse;
-            break;
-            
-          } catch (parseError) {
-            console.warn(`Erro ao processar resposta JSON do DeepSeek:`, parseError);
-            
-            // Tentar extrair JSON se estiver envolto em texto
-            const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-              try {
-                processedArticle = JSON.parse(jsonMatch[0]);
-                console.log("JSON extraído de texto: ", Object.keys(processedArticle).join(', '));
-                break;
-              } catch (e) {
-                console.error("Falha ao extrair JSON de texto:", e);
+            try {
+              // Parsear a resposta como JSON
+              const parsedResponse = JSON.parse(aiResponse);
+              
+              // Verificar campos obrigatórios
+              console.log(`Campos encontrados: ${Object.keys(parsedResponse).join(', ')}`);
+              console.log(`Tamanho do título: ${parsedResponse.title?.length || 0} caracteres`);
+              console.log(`Tamanho do conteúdo: ${parsedResponse.content?.length || 0} caracteres`);
+              console.log(`conteudo escrito: ${parsedResponse.content || 'Não encontrado'}`);
+              console.log(`Conteúdo (primeiros 200 caracteres): "${parsedResponse.content?.substring(0, 200)}..."`);
+              
+              // Verificações adicionais de qualidade da tradução
+              const hasEnglishOnly = /^[a-zA-Z0-9\s.,!?:;()\-"']+$/.test(parsedResponse.content?.substring(0, 100) || '');
+              const hasPtContent = /[áàâãéèêíïóôõöúüçÁÀÂÃÉÈÊÍÏÓÔÕÖÚÜÇ]/.test(parsedResponse.content || '');
+              
+              // Garantir que todos os campos obrigatórios existam
+              parsedResponse.title = parsedResponse.title || article.title + ' [Tradução automática]';
+              parsedResponse.excerpt = parsedResponse.excerpt || (article.description ? article.description.substring(0, 200) : `Artigo traduzido de ${article.source}`);
+              parsedResponse.content = parsedResponse.content || contentWithLocalImages;
+              parsedResponse.metaTitle = parsedResponse.metaTitle || parsedResponse.title.substring(0, 60);
+              parsedResponse.metaDescription = parsedResponse.metaDescription || parsedResponse.excerpt.substring(0, 160);
+              
+              if (!parsedResponse.title || !parsedResponse.content || !parsedResponse.excerpt) {
+                console.warn(`Resposta da DeepSeek não possui campos obrigatórios. Tentando novamente...`);
+                attempts++;
+                await sleep(1000 * attempts); // Backoff exponencial
+                continue;
               }
+              
+              if (parsedResponse.content.length < 100) {
+                console.warn(`Conteúdo traduzido muito curto (${parsedResponse.content.length} caracteres). Tentando novamente...`);
+                attempts++;
+                await sleep(1000 * attempts);
+                continue;
+              }
+              
+              if (hasEnglishOnly || !hasPtContent) {
+                console.warn("Conteúdo parece estar em inglês ou não contém caracteres portugueses. Tentando novamente...");
+                attempts++;
+                await sleep(1000 * attempts);
+                continue;
+              }
+              
+              // Se chegou aqui, a resposta é válida
+              processedArticle = parsedResponse;
+              break;
+              
+            } catch (parseError) {
+              console.warn(`Erro ao processar resposta JSON do DeepSeek:`, parseError);
+              
+              // Tentar extrair JSON se estiver envolto em texto
+              const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+              if (jsonMatch) {
+                try {
+                  processedArticle = JSON.parse(jsonMatch[0]);
+                  console.log("JSON extraído de texto: ", Object.keys(processedArticle).join(', '));
+                  break;
+                } catch (e) {
+                  console.error("Falha ao extrair JSON de texto:", e);
+                }
+              }
+              
+              attempts++;
+              await sleep(1000 * attempts);
             }
-            
+          } catch (apiError) {
+            console.error(`Erro na API na tentativa ${attempts + 1}:`, apiError);
             attempts++;
             await sleep(1000 * attempts);
           }
-        } catch (apiError) {
-          console.error(`Erro na API na tentativa ${attempts + 1}:`, apiError);
-          attempts++;
-          await sleep(1000 * attempts);
+        } catch (error) {
+          console.error("Erro ao processar artigo:", error);
+          
+          // Atualiza o status do artigo para erro
+          await prisma.scrapedArticle.update({
+            where: { id: articleId },
+            data: { 
+              status: 'ERROR',
+              errorMessage: error instanceof Error ? error.message : 'Erro desconhecido ao processar artigo'
+            }
+          });
+          
+          return NextResponse.json(
+            { error: 'Erro ao processar artigo', details: error instanceof Error ? error.message : null },
+            { status: 500 }
+          );
         }
       }
       
