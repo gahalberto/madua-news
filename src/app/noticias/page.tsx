@@ -2,6 +2,12 @@ import { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import prisma from "@/lib/prisma/client";
+import dynamic from 'next/dynamic';
+
+// Carregar o componente NotificationToggle dinamicamente (apenas no cliente)
+const NotificationToggle = dynamic(() => import('@/components/NotificationToggle'), {
+  ssr: false,
+});
 
 // Metadados para SEO
 export const metadata: Metadata = {
@@ -149,8 +155,14 @@ export default async function NoticiasPage() {
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-6">Fique por dentro das notícias de Israel</h2>
             <p className="text-lg text-gray-600 mb-8">
-              Receba as principais notícias e análises sobre Israel diretamente no seu e-mail.
+              Receba as principais notícias e análises sobre Israel diretamente no seu e-mail ou no seu navegador.
             </p>
+            
+            {/* Opção de notificações do navegador */}
+            <div className="mb-8 flex justify-center">
+              <NotificationToggle />
+            </div>
+            
             <form className="flex flex-col sm:flex-row gap-4 justify-center">
               <input
                 type="email"
