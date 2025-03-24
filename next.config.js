@@ -22,6 +22,22 @@ const nextConfig = {
       ...config.optimization,
       moduleIds: 'deterministic',
       chunkIds: 'deterministic',
+      runtimeChunk: { name: 'runtime' },
+      splitChunks: {
+        chunks: 'all',
+        cacheGroups: {
+          vendors: {
+            test: /[\\/]node_modules[\\/]/,
+            priority: -10,
+            reuseExistingChunk: true,
+          },
+          default: {
+            minChunks: 2,
+            priority: -20,
+            reuseExistingChunk: true,
+          },
+        },
+      },
     };
     return config;
   },
@@ -35,7 +51,8 @@ const nextConfig = {
     ],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    formats: ['image/webp'],
+    formats: ['image/webp', 'image/avif'],
+    minimumCacheTTL: 86400,
     domains: [
       'res.cloudinary.com',
       'utfs.io',
@@ -50,8 +67,7 @@ const nextConfig = {
       'avatars.githubusercontent.com',
       'images.unsplash.com'
     ],
-    unoptimized: true,
-    minimumCacheTTL: 60,
+    unoptimized: false,
   },
   // Otimizações de performance
   poweredByHeader: false,
@@ -87,8 +103,21 @@ const nextConfig = {
           {
             key: 'Content-Security-Policy',
             value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://cdn.onesignal.com https://onesignal.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://onesignal.com; img-src 'self' data: https: http:; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://www.google-analytics.com https://onesignal.com https://*.onesignal.com; frame-ancestors 'none';"
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, stale-while-revalidate=86400'
           }
         ]
+      },
+      {
+        source: '/article-images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
       },
       {
         source: '/blog-images/:path*',
@@ -125,6 +154,24 @@ const nextConfig = {
             value: 'public, max-age=31536000, immutable',
           },
         ],
+      },
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
       }
     ];
   },
@@ -145,8 +192,12 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  experimental: {},
+  experimental: {
+    optimizeCss: true,
+    optimizeServerReact: true,
+  },
   serverExternalPackages: ['yfinance', 'lxml', 'pandas'],
+  swcMinify: true,
 };
 
 module.exports = nextConfig; 
