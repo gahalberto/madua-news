@@ -10,9 +10,14 @@ import Script from "next/script";
 import Head from "next/head";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 
+// Otimização de fonte - preload e display swap
 const inter = Inter({ 
   subsets: ["latin"],
   display: 'swap',
+  preload: true,
+  fallback: ['system-ui', 'sans-serif'],
+  adjustFontFallback: true,
+  variable: '--font-inter',
 });
 
 export const metadata: Metadata = {
@@ -88,7 +93,7 @@ export default function RootLayout({
   const isDevelopment = process.env.NODE_ENV === 'development';
   
   return (
-    <html lang="pt-BR" dir="ltr" className="light">
+    <html lang="pt-BR" dir="ltr" className={`light ${inter.variable}`}>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
@@ -103,10 +108,41 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="color-scheme" content="light" />
         
+        {/* Preload dos recursos críticos */}
+        <link 
+          rel="preload" 
+          href="/images/logo.png" 
+          as="image" 
+          type="image/png" 
+          fetchPriority="high" 
+        />
+        <link 
+          rel="preconnect" 
+          href="https://cdn.onesignal.com" 
+          crossOrigin="anonymous" 
+        />
+        <link 
+          rel="preconnect" 
+          href="https://fonts.googleapis.com" 
+          crossOrigin="anonymous" 
+        />
+        <link 
+          rel="preconnect" 
+          href="https://fonts.gstatic.com" 
+          crossOrigin="anonymous" 
+        />
+        
         <script
           dangerouslySetInnerHTML={{
             __html: `
               document.documentElement.style.colorScheme = 'light';
+              // Prevenir FOUC (Flash Of Unstyled Content)
+              document.documentElement.classList.add('js-loading');
+              window.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => {
+                  document.documentElement.classList.remove('js-loading');
+                }, 0);
+              });
             `
           }}
         />
@@ -117,6 +153,7 @@ export default function RootLayout({
             <script 
               src="/api/proxy/onesignal?path=/sdks/web/v16/OneSignalSDK.page.js" 
               async 
+              defer
             />
             <script 
               dangerouslySetInnerHTML={{
@@ -138,16 +175,14 @@ export default function RootLayout({
         )}
       </head>
       <body 
-        className={inter.className}
-        style={{ 
-          backgroundColor: "#ffffff", 
-          color: "#171717" 
-        }}
+        className={`${inter.className} antialiased text-black bg-white dark:bg-gray-950 dark:text-white`}
       >
         <AuthProvider>
           <CartProvider>
             <MainNavbar />
-            {children}
+            <main>
+              {children}
+            </main>
             <Toaster />
             <GoogleAnalytics />
           </CartProvider>
@@ -156,6 +191,7 @@ export default function RootLayout({
         <Script
           id="structured-data"
           type="application/ld+json"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
@@ -185,12 +221,12 @@ export default function RootLayout({
         />
         {/* Google Analytics */}
         <Script
-          strategy="afterInteractive"
+          strategy="lazyOnload"
           src={`https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX`}
         />
         <Script
           id="google-analytics"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
           dangerouslySetInnerHTML={{
             __html: `
               window.dataLayer = window.dataLayer || [];
@@ -206,12 +242,12 @@ export default function RootLayout({
           <>
             <Script 
               src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" 
-              strategy="afterInteractive"
+              strategy="lazyOnload"
               crossOrigin="anonymous"
             />
             <Script
               id="onesignal-init"
-              strategy="afterInteractive"
+              strategy="lazyOnload"
               dangerouslySetInnerHTML={{
                 __html: `
                   window.OneSignalDeferred = window.OneSignalDeferred || [];
