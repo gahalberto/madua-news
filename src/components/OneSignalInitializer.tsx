@@ -2,101 +2,88 @@
 
 import { useEffect } from 'react';
 
-// Não precisamos mais declarar os tipos aqui, pois estão no arquivo onesignal.d.ts
-// Removendo definições duplicadas
-
+/**
+ * Este componente inicializa o OneSignal e propõe configurações diferentes
+ * com base no dispositivo do usuário para maximizar a compatibilidade.
+ */
 export default function OneSignalInitializer() {
   useEffect(() => {
-    // Garantir que o código seja executado apenas no lado do cliente
-    if (typeof window !== 'undefined') {
-      // O objeto OneSignal já foi criado pelo script no layout
-      if (window.OneSignal) {
-        // Configurar o comportamento de slidedown automático
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        window.OneSignalDeferred.push(function(OneSignal) {
-          // Desativar o botão de notificação flutuante
-          OneSignal.Notifications.setDefaultUrl(window.location.origin);
-
-          // Verificar se o usuário já concedeu permissão
-          const checkAndShowSlidedown = async () => {
-            // Aguardar um pequeno período para dar tempo do OneSignal carregar completamente
-            setTimeout(async () => {
-              try {
-                // Verificar o status da permissão
-                const permission = await OneSignal.Notifications.permission;
-                
-                // Se o usuário ainda não decidiu sobre permissões, mostrar o slidedown
-                if (permission !== 'granted' && permission !== 'denied') {
-                  // Exibir o slidedown de notificação automaticamente
-                  await OneSignal.Slidedown.promptPush({
-                    autoPrompt: true,
-                    categoryOptions: {
-                      positiveUpdateButton: "Permitir",
-                      negativeUpdateButton: "Cancelar",
-                      savingButtonText: "Salvando...",
-                      errorButtonText: "Tentar novamente",
-                      confirmMessage: "Clique em PERMITIR para receber as últimas notícias sobre Israel",
-                      actionMessage: "Fique por dentro das últimas notícias sobre Israel diretamente no seu dispositivo",
-                      exampleNotificationTitleDesktop: "Notícia importante sobre Israel",
-                      exampleNotificationMessageDesktop: "Esta é um exemplo de como você receberá nossas notificações",
-                      exampleNotificationCaption: "Você pode cancelar a qualquer momento",
-                      acceptButton: "PERMITIR",
-                      cancelButton: "AGORA NÃO",
-                    }
-                  });
+    if (typeof window === 'undefined') return;
+    
+    // Detectar dispositivo móvel
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const isMobile = /android|webos|iphone|ipad|ipod|blackberry|windows phone/.test(userAgent);
+    const isIOS = /iphone|ipad|ipod/.test(userAgent);
+    
+    // Configurar OneSignal
+    if (window.OneSignal) {
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      window.OneSignalDeferred.push(function(OneSignal) {
+        // Definir a URL padrão para notificações
+        OneSignal.Notifications.setDefaultUrl(window.location.origin);
+        
+        // Verificar se o usuário já concedeu permissão
+        const checkAndSetupNotifications = async () => {
+          try {
+            const permission = await OneSignal.Notifications.permission;
+            
+            // Em dispositivos móveis, usamos uma abordagem diferente
+            if (isMobile) {
+              if (isIOS) {
+                // No iOS, verificamos se o site está sendo executado como PWA
+                const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches;
+                if (!isInStandaloneMode) {
+                  // Se não estiver em modo standalone, não exibimos o prompt de notificação
+                  // pois o Safari iOS não suporta notificações push em sites regulares
+                  console.log('iOS detectado fora do modo PWA, notificações não disponíveis');
+                  return;
                 }
-              } catch (error) {
-                console.error("Erro ao verificar permissão ou exibir slidedown:", error);
               }
-            }, 2000); // Aguardar 2 segundos para dar tempo de carregar
-          };
-
-          checkAndShowSlidedown();
-        });
-      } else {
-        // Se por algum motivo não foi inicializado, podemos fazer isso aqui
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        window.OneSignalDeferred.push(async function(OneSignal) {
-          await OneSignal.init({
-            appId: "f6846faa-f562-44e5-b7ac-7f1fe0e45c74",
-            safari_web_id: "web.onesignal.auto.103c5ae1-79d5-4292-a45e-cec7ddd48c52",
-            notifyButton: {
-              enable: false, // Desativar o botão flutuante
-            },
-            allowLocalhostAsSecureOrigin: true,
-          });
-          
-          // Configurar o slidedown após inicialização
-          OneSignal.Notifications.setDefaultUrl(window.location.origin);
-          
-          // Exibir o slidedown de notificação automaticamente após 2 segundos
-          setTimeout(async () => {
-            try {
-              await OneSignal.Slidedown.promptPush({
-                autoPrompt: true,
-                categoryOptions: {
-                  positiveUpdateButton: "Permitir",
-                  negativeUpdateButton: "Cancelar",
-                  savingButtonText: "Salvando...",
-                  errorButtonText: "Tentar novamente",
-                  confirmMessage: "Clique em PERMITIR para receber as últimas notícias sobre Israel",
-                  actionMessage: "Fique por dentro das últimas notícias sobre Israel diretamente no seu dispositivo",
-                  exampleNotificationTitleDesktop: "Notícia importante sobre Israel",
-                  exampleNotificationMessageDesktop: "Esta é um exemplo de como você receberá nossas notificações",
-                  exampleNotificationCaption: "Você pode cancelar a qualquer momento",
-                  acceptButton: "PERMITIR",
-                  cancelButton: "AGORA NÃO",
+              
+              // Em dispositivos Android, esperamos que o usuário interaja com o site antes
+              let hasInteracted = false;
+              
+              const handleInteraction = () => {
+                if (!hasInteracted) {
+                  hasInteracted = true;
+                  // Remover os event listeners depois da primeira interação
+                  document.removeEventListener('click', handleInteraction);
+                  document.removeEventListener('touchstart', handleInteraction);
+                  window.removeEventListener('scroll', handleInteraction);
+                  
+                  // Aguardar um pouco antes de mostrar o prompt de notificação
+                  setTimeout(() => {
+                    if (permission !== 'granted' && permission !== 'denied') {
+                      console.log('Tentando exibir slidedown após interação do usuário em dispositivo móvel');
+                      OneSignal.Slidedown.promptPush();
+                    }
+                  }, 2000);
                 }
-              });
-            } catch (error) {
-              console.error("Erro ao exibir slidedown:", error);
+              };
+              
+              // Adicionar event listeners para detectar interação do usuário
+              document.addEventListener('click', handleInteraction);
+              document.addEventListener('touchstart', handleInteraction);
+              window.addEventListener('scroll', handleInteraction);
+            } else {
+              // Em desktops, podemos mostrar o prompt depois de um atraso curto
+              setTimeout(() => {
+                if (permission !== 'granted' && permission !== 'denied') {
+                  console.log('Tentando exibir slidedown em desktop após atraso');
+                  OneSignal.Slidedown.promptPush();
+                }
+              }, 3000);
             }
-          }, 2000);
-        });
-      }
+          } catch (error) {
+            console.error("Erro ao verificar permissão ou exibir slidedown:", error);
+          }
+        };
+
+        // Aguardar um pouco para dar tempo do OneSignal carregar completamente
+        setTimeout(checkAndSetupNotifications, 1000);
+      });
     }
   }, []);
 
-  // Este componente não renderiza nada visualmente
   return null;
 } 

@@ -8,6 +8,14 @@ import { SocialShare } from '@/components/SocialShare';
 import { TelegramShareButton } from '@/components/TelegramShareButton';
 import ViewCounter from "@/components/ViewCounter";
 import { PostBanner } from "@/components/PostBanner";
+import ClientOnly from "@/components/ClientOnly";
+import dynamic from "next/dynamic";
+
+// Importar o componente de divisão de conteúdo com carregamento dinâmico
+const ArticleContentWithPrompt = dynamic(
+  () => import('@/components/ArticleContentWithPrompt'),
+  { ssr: false }
+);
 
 // Buscar post pelo ID
 async function getBlogPost(slug: string) {
@@ -129,21 +137,6 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-// Componente para renderizar o conteúdo Markdown
-function MarkdownContent({ content }: { content: string }) {
-  // Em um ambiente real, você usaria uma biblioteca como react-markdown
-  // Aqui estamos fazendo uma simulação simples
-  const html = content
-    .replace(/^# (.*$)/gm, '<h1 class="text-3xl font-bold mt-8 mb-4">$1</h1>')
-    .replace(/^## (.*$)/gm, '<h2 class="text-2xl font-bold mt-6 mb-3">$1</h2>')
-    .replace(/^### (.*$)/gm, '<h3 class="text-xl font-bold mt-5 mb-2">$1</h3>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/\n/g, '<br />');
-  
-  return <div dangerouslySetInnerHTML={{ __html: html }} />;
-}
-
 export default async function BlogPostPage({ params }: { params: { slug: string } }) {
   // Garantir que params seja tratado como um objeto assíncrono
   const { slug } = params;
@@ -261,7 +254,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         
         {/* Conteúdo do Post */}
         <div className="prose prose-lg max-w-none mb-12">
-          <MarkdownContent content={post.content} />
+          <ArticleContentWithPrompt content={post.content} />
         </div>
         
         {/* Banner para compartilhamento */}
