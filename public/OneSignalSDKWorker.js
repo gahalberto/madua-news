@@ -7,5 +7,5 @@ if (isDevelopment) {
   self.importScripts('/api/proxy/onesignal?path=/sdks/web/v16/OneSignalSDK.sw.js');
 } else {
   // Em produção, carrega diretamente do CDN do OneSignal
-  self.importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
+  self.importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 } 

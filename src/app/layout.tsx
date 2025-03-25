@@ -9,6 +9,8 @@ import MainNavbar from "@/components/MainNavbar";
 import Script from "next/script";
 import Head from "next/head";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import ClientOnly from "@/components/ClientOnly";
+import ClientProviders from "@/components/ClientProviders";
 
 // Otimização de fonte - preload e display swap
 const inter = Inter({ 
@@ -166,9 +168,13 @@ export default function RootLayout({
         <AuthProvider>
           <CartProvider>
             <MainNavbar />
-            <main>
-              {children}
-            </main>
+            <ClientOnly>
+              <ClientProviders>
+                <main>
+                  {children}
+                </main>
+              </ClientProviders>
+            </ClientOnly>
             <Toaster />
             <GoogleAnalytics />
           </CartProvider>
