@@ -11,6 +11,7 @@ import Head from "next/head";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import ClientOnly from "@/components/ClientOnly";
 import ClientProviders from "@/components/ClientProviders";
+import TelegramBanner from "@/components/TelegramBanner";
 
 // Otimização de fonte - preload e display swap
 const inter = Inter({ 
@@ -191,6 +192,9 @@ export default function RootLayout({
       >
         <AuthProvider>
           <CartProvider>
+            <div className="container mx-auto px-4 pt-2">
+              <TelegramBanner />
+            </div>
             <MainNavbar />
             <ClientOnly>
               <ClientProviders>
