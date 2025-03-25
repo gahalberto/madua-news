@@ -121,8 +121,32 @@ export default function RootLayout({
                   appId: "f6846faa-f562-44e5-b7ac-7f1fe0e45c74",
                   safari_web_id: "web.onesignal.auto.103c5ae1-79d5-4292-a45e-cec7ddd48c52",
                   notifyButton: {
-                    enable: true,
+                    enable: false,
                   },
+                  promptOptions: {
+                    slidedown: {
+                      enabled: true,
+                      autoPrompt: false,
+                      timeDelay: 5,
+                      pageViews: 1,
+                      actionMessage: "Gostaria de receber notícias sobre Israel?",
+                      acceptButtonText: "PERMITIR",
+                      cancelButtonText: "AGORA NÃO",
+                      categories: {
+                        tags: [
+                          {
+                            tag: "notícias",
+                            label: "Notícias Diárias",
+                          },
+                          {
+                            tag: "emergência",
+                            label: "Alertas Urgentes",
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  allowLocalhostAsSecureOrigin: true,
                 });
               });
               

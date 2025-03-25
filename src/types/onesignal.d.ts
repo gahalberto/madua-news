@@ -25,13 +25,37 @@ interface IInitObject {
   allowLocalhostAsSecureOrigin?: boolean;
 }
 
+// Opções para o slidedown de push
+interface IPushSlidedownOptions {
+  autoPrompt?: boolean;
+  categoryOptions?: {
+    positiveUpdateButton?: string;
+    negativeUpdateButton?: string;
+    savingButtonText?: string;
+    errorButtonText?: string;
+    confirmMessage?: string;
+    actionMessage?: string;
+    exampleNotificationTitleDesktop?: string;
+    exampleNotificationMessageDesktop?: string;
+    exampleNotificationCaption?: string;
+    acceptButton?: string;
+    cancelButton?: string;
+  }
+}
+
 // Interfaces para os módulos do OneSignal
 interface IOneSignalSlidedown {
   // Métodos para slide-down
+  promptPush(options?: IPushSlidedownOptions): Promise<void>;
+  promptPushCategories(): Promise<void>;
+  promptSms(): Promise<void>;
+  promptEmail(): Promise<void>;
+  promptSmsAndEmail(): Promise<void>;
 }
 
 interface IOneSignalNotifications {
   // Métodos para notificações
+  permission: 'default' | 'granted' | 'denied';
   requestPermission(): Promise<void>;
   setDefaultUrl(url: string): Promise<void>;
   setDefaultTitle(title: string): Promise<void>;
@@ -65,6 +89,7 @@ interface IOneSignalOneSignal {
   init(options: IInitObject): Promise<void>;
   setConsentGiven(consent: boolean): Promise<void>;
   setConsentRequired(requiresConsent: boolean): Promise<void>;
+  on(event: string, listener: (eventData: any) => void): void;
 }
 
 // Declaração global para TypeScript

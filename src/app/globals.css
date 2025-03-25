@@ -95,3 +95,39 @@
     transform: rotate(360deg);
   }
 }
+
+/* Estilos personalizados para o popup do OneSignal */
+.onesignal-slidedown-dialog {
+  border-radius: 8px !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
+}
+
+.onesignal-slidedown-dialog .slidedown-button.primary {
+  background-color: #1d4ed8 !important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  padding: 10px 16px !important;
+  transition: background-color 0.2s !important;
+}
+
+.onesignal-slidedown-dialog .slidedown-button.primary:hover {
+  background-color: #2563eb !important;
+}
+
+.onesignal-slidedown-dialog .slidedown-button.secondary {
+  color: #1d4ed8 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  padding: 10px 16px !important;
+  background-color: white !important;
+  transition: background-color 0.2s !important;
+}
+
+.onesignal-slidedown-dialog .slidedown-button.secondary:hover {
+  background-color: #f8fafc !important;
+}
+
+.onesignal-slidedown-dialog .slidedown-body {
+  padding: 20px !important;
+}
