@@ -108,6 +108,34 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="color-scheme" content="light" />
         
+        {/* OneSignal Web Push Notifications */}
+        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.OneSignalDeferred = window.OneSignalDeferred || [];
+              OneSignalDeferred.push(async function(OneSignal) {
+                await OneSignal.init({
+                  appId: "f6846faa-f562-44e5-b7ac-7f1fe0e45c74",
+                  safari_web_id: "web.onesignal.auto.103c5ae1-79d5-4292-a45e-cec7ddd48c52",
+                  notifyButton: {
+                    enable: true,
+                  },
+                });
+              });
+              
+              document.documentElement.style.colorScheme = 'light';
+              // Prevenir FOUC (Flash Of Unstyled Content)
+              document.documentElement.classList.add('js-loading');
+              window.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => {
+                  document.documentElement.classList.remove('js-loading');
+                }, 0);
+              });
+            `
+          }}
+        />
+        
         {/* Preload dos recursos críticos */}
         <link 
           rel="preload" 
@@ -131,48 +159,6 @@ export default function RootLayout({
           href="https://fonts.gstatic.com" 
           crossOrigin="anonymous" 
         />
-        
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              document.documentElement.style.colorScheme = 'light';
-              // Prevenir FOUC (Flash Of Unstyled Content)
-              document.documentElement.classList.add('js-loading');
-              window.addEventListener('DOMContentLoaded', () => {
-                setTimeout(() => {
-                  document.documentElement.classList.remove('js-loading');
-                }, 0);
-              });
-            `
-          }}
-        />
-        
-        {/* Em ambiente de desenvolvimento, carregamos o script do OneSignal via nosso proxy */}
-        {isDevelopment && (
-          <>
-            <script 
-              src="/api/proxy/onesignal?path=/sdks/web/v16/OneSignalSDK.page.js" 
-              async 
-              defer
-            />
-            <script 
-              dangerouslySetInnerHTML={{
-                __html: `
-                  window.OneSignalDeferred = window.OneSignalDeferred || [];
-                  OneSignalDeferred.push(async function(OneSignal) {
-                    await OneSignal.init({
-                      appId: "f6846faa-f562-44e5-b7ac-7f1fe0e45c74",
-                      safari_web_id: "web.onesignal.auto.103c5ae1-79d5-4292-a45e-cec7ddd48c52",
-                      notifyButton: {
-                        enable: true,
-                      },
-                    });
-                  });
-                `
-              }}
-            />
-          </>
-        )}
       </head>
       <body 
         className={`${inter.className} antialiased text-black bg-white`}
@@ -236,35 +222,6 @@ export default function RootLayout({
             `
           }}
         />
-        
-        {/* Em produção, usamos o componente Script do Next.js */}
-        {!isDevelopment && (
-          <>
-            <Script 
-              src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" 
-              strategy="lazyOnload"
-              crossOrigin="anonymous"
-            />
-            <Script
-              id="onesignal-init"
-              strategy="lazyOnload"
-              dangerouslySetInnerHTML={{
-                __html: `
-                  window.OneSignalDeferred = window.OneSignalDeferred || [];
-                  OneSignalDeferred.push(async function(OneSignal) {
-                    await OneSignal.init({
-                      appId: "f6846faa-f562-44e5-b7ac-7f1fe0e45c74",
-                      safari_web_id: "web.onesignal.auto.103c5ae1-79d5-4292-a45e-cec7ddd48c52",
-                      notifyButton: {
-                        enable: true,
-                      },
-                    });
-                  });
-                `
-              }}
-            />
-          </>
-        )}
       </body>
     </html>
   );
