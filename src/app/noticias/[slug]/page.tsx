@@ -9,13 +9,7 @@ import { TelegramShareButton } from '@/components/TelegramShareButton';
 import ViewCounter from "@/components/ViewCounter";
 import { PostBanner } from "@/components/PostBanner";
 import ClientOnly from "@/components/ClientOnly";
-import dynamic from "next/dynamic";
-
-// Importar o componente de divisão de conteúdo com carregamento dinâmico
-const ArticleContentWithPrompt = dynamic(
-  () => import('@/components/ArticleContentWithPrompt'),
-  { ssr: false }
-);
+import ClientArticleContent from "@/components/ClientArticleContent";
 
 // Buscar post pelo ID
 async function getBlogPost(slug: string) {
@@ -254,7 +248,9 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         
         {/* Conteúdo do Post */}
         <div className="prose prose-lg max-w-none mb-12">
-          <ArticleContentWithPrompt content={post.content} />
+          <ClientOnly>
+            <ClientArticleContent content={post.content} />
+          </ClientOnly>
         </div>
         
         {/* Banner para compartilhamento */}
