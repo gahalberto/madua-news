@@ -1,7 +1,6 @@
 import { Metadata } from "next";
 import Footer from "@/components/shared/Footer";
 import { ReactNode } from 'react';
-import NotificationToggleWidget from '@/components/NotificationToggleWidget';
 
 export const metadata: Metadata = {
   title: {
@@ -35,7 +34,6 @@ export default function NoticiasLayout({
         {children}
       </main>
       <Footer />
-      <NotificationToggleWidget />
     </div>
   );
 } 
