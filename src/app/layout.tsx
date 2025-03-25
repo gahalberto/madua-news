@@ -175,7 +175,7 @@ export default function RootLayout({
         )}
       </head>
       <body 
-        className={`${inter.className} antialiased text-black bg-white dark:bg-gray-950 dark:text-white`}
+        className={`${inter.className} antialiased text-black bg-white`}
       >
         <AuthProvider>
           <CartProvider>
