@@ -3,12 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import prisma from "@/lib/prisma/client";
 import ClientOnly from "@/components/ClientOnly";
-import dynamic from "next/dynamic";
-
-// Importar o botão de notificação personalizado com carregamento dinâmico
-const NotificationButton = dynamic(() => import('@/components/NotificationButton'), {
-  ssr: false
-});
+import NotificationButtonWrapper from "@/components/NotificationButtonWrapper";
 
 // Metadados para SEO
 export const metadata: Metadata = {
@@ -159,9 +154,9 @@ export default async function NoticiasPage() {
               Receba as principais notícias e análises sobre Israel diretamente no seu e-mail ou no seu navegador.
             </p>
             
-            {/* Botão de notificação personalizado */}
+            {/* Botão de notificação usando o wrapper cliente */}
             <ClientOnly>
-              <NotificationButton />
+              <NotificationButtonWrapper />
             </ClientOnly>
             
             <form className="flex flex-col sm:flex-row gap-4 justify-center">
