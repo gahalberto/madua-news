@@ -76,7 +76,7 @@ export async function notifyNewPost(post: {
   }
   
   // Usar a URL do site a partir das variáveis de ambiente, com fallback para o valor padrão
-  const blogUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://madua.com.br';
+  const blogUrl = 'https://madua.com.br';
   
   // Construir URL do post verificando se o slug já tem estrutura completa
   let postUrl;
