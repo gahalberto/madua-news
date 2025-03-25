@@ -1,0 +1,18 @@
+# Configuração de Cron para executar o web scraper 5 vezes ao dia
+# Horários: 9h, 12h, 15h, 18h, 21h
+
+# Substitua /caminho/completo/para/o pelo caminho absoluto do projeto
+# Exemplo: se seu projeto está em /var/www/madua, então use /var/www/madua
+
+# Para instalar, execute: crontab crontab-config.txt
+# Para verificar se foi instalado: crontab -l
+
+# m h dom mon dow command
+0 9 * * * cd /caminho/completo/para/o/projeto && ./scheduled_scraper.sh
+0 12 * * * cd /caminho/completo/para/o/projeto && ./scheduled_scraper.sh
+0 15 * * * cd /caminho/completo/para/o/projeto && ./scheduled_scraper.sh
+0 18 * * * cd /caminho/completo/para/o/projeto && ./scheduled_scraper.sh
+0 21 * * * cd /caminho/completo/para/o/projeto && ./scheduled_scraper.sh
+
+# Redireciona logs para um arquivo para facilitar depuração
+# */5 * * * * cd /caminho/completo/para/o/projeto && ./cron_debug.sh >> /tmp/cron_madua.log 2>&1 
