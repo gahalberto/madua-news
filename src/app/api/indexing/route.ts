@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { indexMultipleUrls, getLatestArticleUrls } from '../../lib/googleIndexing';
+import { indexMultipleUrls, getLatestArticleUrls } from '../../../lib/googleIndexing';
 
 /**
  * API para solicitar a indexação de URLs no Google
