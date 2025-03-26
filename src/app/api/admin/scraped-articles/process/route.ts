@@ -113,7 +113,8 @@ export async function POST(request: NextRequest) {
       4. Não omita informações importantes do original
       5. Use parágrafos para separar o conteúdo e facilitar a leitura
       6. O conteúdo deve ter pelo menos 500 caracteres
-      7. Retorne APENAS o JSON como resposta, sem nenhum texto adicional
+      7. Escolha 10 hashtags relevantes para o assunto do artigo, em português
+      8. Retorne APENAS o JSON como resposta, sem nenhum texto adicional
       
       TÍTULO ORIGINAL: ${article.title}
       
@@ -128,7 +129,8 @@ export async function POST(request: NextRequest) {
         "excerpt": "Resumo do artigo em português (150-200 caracteres)",
         "content": "Conteúdo completo em português, separado em parágrafos. Deve conter toda a informação do original, mas em português.",
         "metaTitle": "Título SEO (até 60 caracteres)",
-        "metaDescription": "Descrição SEO (até 160 caracteres)"
+        "metaDescription": "Descrição SEO (até 160 caracteres)",
+        "hashtags": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5", "hashtag6", "hashtag7", "hashtag8", "hashtag9", "hashtag10"]
       }
       
       LEMBRE-SE: O campo "content" deve conter TODO o conteúdo traduzido, não apenas um resumo.
@@ -188,6 +190,7 @@ export async function POST(request: NextRequest) {
               parsedResponse.content = parsedResponse.content || contentWithLocalImages;
               parsedResponse.metaTitle = parsedResponse.metaTitle || parsedResponse.title.substring(0, 60);
               parsedResponse.metaDescription = parsedResponse.metaDescription || parsedResponse.excerpt.substring(0, 160);
+              parsedResponse.hashtags = parsedResponse.hashtags || [];
               
               if (!parsedResponse.title || !parsedResponse.content || !parsedResponse.excerpt) {
                 console.warn(`Resposta da DeepSeek não possui campos obrigatórios. Tentando novamente...`);
@@ -268,6 +271,7 @@ export async function POST(request: NextRequest) {
           content: contentWithLocalImages,
           metaTitle: article.title.substring(0, 60),
           metaDescription: article.description ? article.description.substring(0, 160) : `Artigo de ${article.source}`,
+          hashtags: [],
         };
       }
 
@@ -428,7 +432,9 @@ export async function POST(request: NextRequest) {
         data: { 
           status: 'PROCESSED',
           processedAt: new Date(),
-          postId: post.id
+          postId: post.id,
+          // @ts-ignore - O campo hashtags foi adicionado ao modelo mas pode não estar atualizado no Prisma client
+          hashtags: processedArticle.hashtags || []
         }
       });
 
@@ -465,7 +471,8 @@ export async function POST(request: NextRequest) {
           id: post.id,
           title: post.title,
           excerpt: processedArticle.excerpt,
-          slug: post.slug
+          slug: post.slug,
+          hashtags: processedArticle.hashtags || []
         });
         
         if (instagramResult.success) {

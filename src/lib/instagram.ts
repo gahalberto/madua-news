@@ -14,6 +14,7 @@ export async function postToInstagram(post: {
   title: string;
   excerpt?: string | null;
   slug?: string | null;
+  hashtags?: string[];
 }): Promise<{ success: boolean; id?: string; error?: string }> {
   try {
     console.log(`Iniciando processo de postagem no Instagram para o post ${post.id}`);
@@ -22,8 +23,13 @@ export async function postToInstagram(post: {
       throw new Error('Título do post é obrigatório para postagem no Instagram');
     }
 
-    // Preparar a legenda para o Instagram
-    const caption = `${post.title}\n\n${post.excerpt || ''}\n\nNotícia completa no nosso site, link na bio!`;
+    // Preparar as hashtags
+    const hashtagsString = post.hashtags && post.hashtags.length > 0 
+      ? '\n\n' + post.hashtags.map(tag => tag.startsWith('#') ? tag : `#${tag}`).join(' ')
+      : '';
+    
+    // Preparar a legenda para o Instagram com hashtags
+    const caption = `${post.title}\n\n${post.excerpt || ''}\n\nNotícia completa no nosso site, link na bio!${hashtagsString}`;
     
     // Gerar banner para o post
     console.log('Gerando banner para o Instagram...');

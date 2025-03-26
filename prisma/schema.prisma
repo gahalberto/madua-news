@@ -456,6 +456,7 @@ model ScrapedArticle {
   errorMessage String?   @db.Text
   createdAt    DateTime  @default(now())
   processedAt  DateTime?
+  hashtags     String[]  @default([]) // Armazena as hashtags geradas pela DeepSeek API
 
   // Referência ao Post após processamento
   postId String?
