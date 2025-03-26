@@ -148,12 +148,16 @@ export async function getLatestArticleUrls(limit: number = 10): Promise<string[]
       },
     });
 
+    // Usar a URL do site configurada ou o domínio padrão, nunca localhost
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://madua.com.br';
+    
+    // Verificar e remover localhost se por algum motivo estiver nas variáveis de ambiente
+    const siteUrl = baseUrl.includes('localhost') ? 'https://madua.com.br' : baseUrl;
     
     // Formatar as URLs completas e filtrar slugs nulos
     return articles
       .filter((article): article is { slug: string } => article.slug !== null)
-      .map(article => `${baseUrl}/noticias/${article.slug}`);
+      .map(article => `${siteUrl}/noticias/${article.slug}`);
   } catch (error) {
     console.error('[GoogleIndexing] Erro ao obter URLs de artigos recentes:', error);
     return [];
