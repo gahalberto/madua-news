@@ -48,6 +48,7 @@
     "next": "^15.2.1",
     "next-auth": "^4.24.11",
     "next-mdx-remote": "^5.0.0",
+    "node-fetch": "^3.3.2",
     "openai": "^4.89.0",
     "prisma": "^6.4.1",
     "react": "^19.0.0",

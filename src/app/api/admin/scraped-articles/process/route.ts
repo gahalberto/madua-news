@@ -23,6 +23,7 @@ import { authOptions } from '@/lib/auth';
 import OpenAI from 'openai';
 import { notifyNewPost as notifyTelegram } from '@/lib/telegram';
 import { notifyNewPost as notifyOneSignal } from '@/lib/onesignal';
+import { postToInstagram } from '@/lib/instagram';
 
 // Inicializa o cliente DeepSeek
 const deepseek = new OpenAI({
@@ -455,6 +456,26 @@ export async function POST(request: NextRequest) {
       } catch (oneSignalError) {
         console.error("Erro ao enviar notificação push via OneSignal:", oneSignalError);
         // Não interrompe o fluxo principal em caso de erro no OneSignal
+      }
+
+      // Envia para o Instagram automaticamente
+      try {
+        console.log('Enviando post para o Instagram...');
+        const instagramResult = await postToInstagram({
+          id: post.id,
+          title: post.title,
+          excerpt: processedArticle.excerpt,
+          slug: post.slug
+        });
+        
+        if (instagramResult.success) {
+          console.log(`Post enviado automaticamente para o Instagram: ${instagramResult.id}`);
+        } else {
+          console.warn(`Não foi possível enviar para o Instagram: ${instagramResult.error}`);
+        }
+      } catch (instagramError) {
+        console.error("Erro ao enviar post para o Instagram:", instagramError);
+        // Não interrompe o fluxo principal em caso de erro no Instagram
       }
 
       return NextResponse.json({
