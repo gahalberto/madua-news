@@ -395,7 +395,39 @@ export default function EditBlogPostPage() {
         imageUrl = `${siteUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
       }
       
-      logDebug("Enviando para Instagram", { imageUrl, captionLength: caption.length });
+      // Primeiro, testar se a URL é acessível
+      logDebug("Testando URL da imagem antes de enviar para Instagram", { imageUrl });
+      
+      const testResponse = await fetch('/api/test-image-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: imageUrl }),
+      });
+      
+      const testResult = await testResponse.json();
+      
+      if (!testResult.isAccessible) {
+        let errorMessage = 'A URL da imagem não é acessível publicamente. O Instagram requer URLs públicas.';
+        
+        if (testResult.statusCode) {
+          errorMessage += ` Status: ${testResult.statusCode}.`;
+        }
+        
+        if (testResult.error) {
+          errorMessage += ` Erro: ${testResult.error}`;
+        }
+        
+        logDebug("Teste de URL falhou", testResult);
+        throw new Error(errorMessage);
+      }
+      
+      logDebug("Enviando para Instagram", { 
+        imageUrl, 
+        captionLength: caption.length,
+        imageTestResult: testResult 
+      });
 
       const response = await fetch('/api/instagram-post', {
         method: 'POST',
