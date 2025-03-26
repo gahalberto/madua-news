@@ -46,14 +46,7 @@ export async function POST(request: NextRequest) {
   try {
     // Verificar autenticação
     const { searchParams } = new URL(request.url);
-    const skipAuth = searchParams.get('skip-auth') === 'true';
-    
-    if (!skipAuth) {
-      const session = await getServerSession(authOptions);
-      if (!session || session.user.role !== 'ADMIN') {
-        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-      }
-    }
+
 
     // Obter o ID do artigo do corpo da requisição
     const { articleId } = await request.json();

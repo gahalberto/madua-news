@@ -418,15 +418,7 @@ export async function POST(request: NextRequest) {
   try {
     // Verificar autenticação (opcional para chamadas automáticas)
     const { searchParams } = new URL(request.url);
-    const skipAuth = searchParams.get('skip-auth') === 'true';
-    
-    if (!skipAuth) {
-      const session = await getServerSession(authOptions);
-      if (!session || session.user.role !== 'ADMIN') {
-        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-      }
-    }
-    
+
     // Buscar artigos pendentes
     const pendingArticles = await prisma.scrapedArticle.findMany({
       where: { status: 'PENDING' },
