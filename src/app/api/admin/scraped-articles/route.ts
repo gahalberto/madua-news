@@ -8,14 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     // Verificar autenticação
     const { searchParams } = new URL(request.url);
-    const skipAuth = searchParams.get('skip-auth') === 'true';
-    
-    if (!skipAuth) {
-      const session = await getServerSession(authOptions);
-      if (!session || session.user.role !== 'ADMIN') {
-        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-      }
-    }
+
 
     // Parâmetros de paginação
     const page = parseInt(searchParams.get('page') || '1');
@@ -68,11 +61,6 @@ export async function GET(request: NextRequest) {
 // Endpoint para processar manualmente um artigo
 export async function POST(request: NextRequest) {
   try {
-    // Verificar autenticação
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-    }
 
     const { articleId } = await request.json();
 

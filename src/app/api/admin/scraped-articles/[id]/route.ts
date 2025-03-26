@@ -9,15 +9,6 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verificar se o usuário está autenticado e é admin
-    const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Não autorizado' },
-        { status: 401 }
-      );
-    }
-
     const id = params.id;
     
     // Buscar o artigo por ID
@@ -51,15 +42,6 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verificar se o usuário está autenticado e é admin
-    const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Não autorizado' },
-        { status: 401 }
-      );
-    }
-
     const id = params.id;
     
     // Verificar se o artigo existe
