@@ -341,75 +341,31 @@ export default function EditBlogPostPage() {
 
   // Função para enviar para o Instagram
   const handleSendToInstagram = async () => {
-    if (!formData.imageUrl && !imagePreview) {
-      toast.error('É necessário uma imagem para postar no Instagram');
-      return;
-    }
-
     try {
       setIsSendingToInstagram(true);
       
+      // Gerar a URL para o banner com título
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      const bannerUrl = `${baseUrl}/api/generate-banner?title=${encodeURIComponent(formData.title)}&postId=${id}`;
+      
       // Prepara a legenda para o Instagram
-      const caption = `${formData.title}\n\n${formData.excerpt}\n\nOlhe o link na bio para acessar nosso site e ler todo o artigo!`;
-      
-      // URL da imagem a ser usada
-      let imageUrl = formData.imageUrl;
-      
-      // Se estamos usando um preview local (após upload), precisamos fazer upload da imagem primeiro
-      if (imagePreview && formData.imageFile) {
-        // Upload primeiro para obter uma URL pública
-        const uploadFormData = new FormData();
-        uploadFormData.append("file", formData.imageFile);
-        uploadFormData.append("type", "instagram");
-        
-        try {
-          logDebug("Enviando imagem para upload antes do Instagram", { 
-            fileName: formData.imageFile.name, 
-            fileSize: formData.imageFile.size 
-          });
-          
-          const uploadResponse = await fetch("/api/upload?type=instagram", {
-            method: "POST",
-            body: uploadFormData,
-          });
-          
-          if (!uploadResponse.ok) {
-            throw new Error(`Erro no upload: ${uploadResponse.status}`);
-          }
-          
-          const { url } = await uploadResponse.json();
-          imageUrl = url;
-          logDebug("URL pública obtida para o Instagram", { imageUrl });
-        } catch (uploadError) {
-          console.error("Erro durante upload para Instagram:", uploadError);
-          toast.error(`Erro no upload para Instagram: ${uploadError instanceof Error ? uploadError.message : "Erro desconhecido"}`);
-          setIsSendingToInstagram(false);
-          return;
-        }
-      }
-      
-      // Garantir que a URL da imagem seja absolutamente pública
-      if (imageUrl && !imageUrl.startsWith('http')) {
-        // Se for uma URL relativa, convertemos para absoluta usando o domínio do site
-        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-        imageUrl = `${siteUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
-      }
+      const caption = `${formData.title}\n\n${formData.excerpt}\n\nNotícia completa no nosso site, link na bio!`;
       
       // Primeiro, testar se a URL é acessível
-      logDebug("Testando URL da imagem antes de enviar para Instagram", { imageUrl });
+      console.log("Testando URL da imagem antes de enviar para Instagram", { bannerUrl });
       
       const testResponse = await fetch('/api/test-image-url', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url: imageUrl }),
+        body: JSON.stringify({ url: bannerUrl }),
       });
       
       const testResult = await testResponse.json();
       
       if (!testResult.isAccessible) {
-        let errorMessage = 'A URL da imagem não é acessível publicamente. O Instagram requer URLs públicas.';
+        let errorMessage = 'A URL do banner não é acessível publicamente. O Instagram requer URLs públicas.';
         
         if (testResult.statusCode) {
           errorMessage += ` Status: ${testResult.statusCode}.`;
@@ -419,12 +375,12 @@ export default function EditBlogPostPage() {
           errorMessage += ` Erro: ${testResult.error}`;
         }
         
-        logDebug("Teste de URL falhou", testResult);
+        console.error("Teste de URL do banner falhou", testResult);
         throw new Error(errorMessage);
       }
       
-      logDebug("Enviando para Instagram", { 
-        imageUrl, 
+      console.log("Enviando para Instagram", { 
+        bannerUrl, 
         captionLength: caption.length,
         imageTestResult: testResult 
       });
@@ -435,7 +391,7 @@ export default function EditBlogPostPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          imageUrl,
+          imageUrl: bannerUrl,
           caption,
         }),
       });
@@ -451,7 +407,6 @@ export default function EditBlogPostPage() {
         
         if (responseData.details) {
           console.error('Detalhes do erro Instagram:', responseData.details);
-          // Verificar se os detalhes contêm mensagens específicas de erro do Instagram
           if (typeof responseData.details === 'string' && responseData.details.includes('Sorry')) {
             errorMessage += `: ${responseData.details.substring(0, 100)}`;
           } else if (responseData.details.error_message) {
@@ -465,7 +420,7 @@ export default function EditBlogPostPage() {
       }
 
       toast.success('Post enviado para o Instagram com sucesso!');
-      logDebug("Resposta do Instagram", responseData);
+      console.log("Resposta do Instagram", responseData);
     } catch (error) {
       console.error('Erro ao enviar para o Instagram:', error);
       toast.error(error instanceof Error ? error.message : 'Erro ao enviar para o Instagram');

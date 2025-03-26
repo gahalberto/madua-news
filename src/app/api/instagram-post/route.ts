@@ -63,17 +63,21 @@ export async function POST(request: Request) {
       captionLength: caption.length
     });
 
-    // Passo 1: Criar o media object
+    // Passo 1: Criar o media object (container)
+    const mediaUrl = `https://graph.facebook.com/v22.0/${instagramUserId}/media`;
+    console.log(`Fazendo solicitação para: ${mediaUrl}`);
+    
+    const mediaParams = new URLSearchParams({
+      image_url: imageUrl,
+      caption: caption,
+      access_token: accessToken
+    });
+
     const mediaResponse = await fetch(
-      `https://graph.instagram.com/v20.0/${instagramUserId}/media`,
+      `${mediaUrl}?${mediaParams.toString()}`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image_url: imageUrl,
-          caption: caption,
-          access_token: accessToken,
-        }),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       }
     );
 
@@ -101,16 +105,20 @@ export async function POST(request: Request) {
       );
     }
 
-    // Passo 2: Publicar o media object
+    // Passo 2: Publicar o media object com o ID do container
+    const publishUrl = `https://graph.facebook.com/v22.0/${instagramUserId}/media_publish`;
+    console.log(`Fazendo solicitação para: ${publishUrl}`);
+    
+    const publishParams = new URLSearchParams({
+      creation_id: mediaData.id,
+      access_token: accessToken
+    });
+
     const publishResponse = await fetch(
-      `https://graph.instagram.com/v20.0/${instagramUserId}/media_publish`,
+      `${publishUrl}?${publishParams.toString()}`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          creation_id: mediaData.id,
-          access_token: accessToken,
-        }),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       }
     );
 
@@ -138,7 +146,11 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ success: true, id: result.id });
+    return NextResponse.json({ 
+      success: true, 
+      id: result.id,
+      mediaId: mediaData.id 
+    });
   } catch (error) {
     console.error('Erro ao postar no Instagram:', error);
     return NextResponse.json(
