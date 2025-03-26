@@ -87,17 +87,7 @@ async function runScraper(): Promise<{ success: boolean; message: string; detail
 
 export async function POST() {
   try {
-    // Verificar permissões (apenas admin pode executar o scraper)
-    const session = await getServerSession(authOptions);
-    
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Não autorizado' },
-        { status: 403 }
-      );
-    }
-    
-    // Executar o scraper
+        // Executar o scraper
     const result = await runScraper();
     
     if (result.success) {
