@@ -13,7 +13,9 @@
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset --force",
     "scrape": "./scraper.sh",
-    "process-articles": "npx ts-node process_all_articles.ts"
+    "process-articles": "npx ts-node process_all_articles.ts",
+    "indexing": "bash scripts/indexing.sh",
+    "indexing:debug": "npx ts-node src/scripts/indexing-cron.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
@@ -39,6 +41,8 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.7",
+    "google-auth-library": "^9.7.0",
+    "googleapis": "^148.0.0",
     "lucide-react": "^0.479.0",
     "mercadopago": "^2.3.0",
     "next": "^15.2.1",
