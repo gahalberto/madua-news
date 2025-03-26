@@ -1,0 +1,29 @@
+# Comandos atualizados para VPS após git pull (Sistema de Indexação Google)
+
+# 1. Instalar novas dependências
+npm install
+
+# 2. Tornar o script de indexação executável
+chmod +x scripts/indexing.sh
+
+# 3. Verificar se os arquivos de configuração estão corretos
+ls -la tsconfig.json.cron scripts/indexing.sh
+
+# 4. Gerar o cliente Prisma
+npx prisma generate
+
+# 5. Reconstruir a aplicação
+npm run build
+
+# 6. Testar se o script de indexação funciona corretamente
+npm run indexing:debug
+
+# 7. Se o teste for bem-sucedido, reiniciar a aplicação
+pm2 restart madua
+
+# 8. Configurar o cron job (só precisa fazer isto uma vez)
+echo "0 9,12,15,18,21 * * * cd /var/www/madua && bash scripts/indexing.sh >> /var/log/indexing.log 2>&1" | crontab -
+
+# 9. Verificar se o cron job foi configurado corretamente
+crontab -l
+
