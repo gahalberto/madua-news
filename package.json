@@ -15,7 +15,7 @@
     "scrape": "./scraper.sh",
     "process-articles": "npx ts-node process_all_articles.ts",
     "indexing": "bash scripts/indexing.sh",
-    "indexing:debug": "npx ts-node --project tsconfig.json.cron src/scripts/indexing-cron.ts"
+    "indexing:debug": "node scripts/fix-module-path.js src/lib/googleIndexing.ts && node scripts/fix-module-path.js src/scripts/indexing-cron.ts && npx ts-node --project tsconfig.json.cron src/scripts/indexing-cron.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

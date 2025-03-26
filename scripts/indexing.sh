@@ -35,6 +35,15 @@ if [ -z "$NEXT_PUBLIC_SITE_URL" ]; then
     echo "AVISO: NEXT_PUBLIC_SITE_URL não está configurado. Usando URL padrão."
 fi
 
+# Verificar se temos permissão para executar o script de correção de módulos
+chmod +x scripts/fix-module-path.js
+
+# Corrigir os caminhos de módulos no arquivo de indexação
+echo "Pré-processando arquivo de script para resolver os aliases de importação..."
+node scripts/fix-module-path.js src/lib/googleIndexing.ts
+node scripts/fix-module-path.js src/scripts/indexing-cron.ts
+node scripts/fix-module-path.js src/app/api/indexing/route.ts
+
 # Executar o script TypeScript
 echo "Executando script de indexação..."
 npx ts-node --project tsconfig.json.cron src/scripts/indexing-cron.ts
