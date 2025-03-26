@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { indexMultipleUrls, getLatestArticleUrls } from '@/lib/googleIndexing';
+import { indexMultipleUrls, getLatestArticleUrls } from '../../lib/googleIndexing';
 
 /**
  * API para solicitar a indexação de URLs no Google
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const results = await indexMultipleUrls(urls, action);
     
     // Calcular estatísticas
-    const successCount = results.filter((r: { success: boolean }) => r.success).length;
+    const successCount = results.filter(r => r.success).length;
     const failureCount = results.length - successCount;
     
     return NextResponse.json({
