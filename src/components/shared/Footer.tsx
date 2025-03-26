@@ -70,12 +70,17 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/termos" className="text-gray-400 hover:text-white transition-colors">
-                  Termos de Uso
+                  Termos de Serviço
                 </Link>
               </li>
               <li>
                 <Link href="/privacidade" className="text-gray-400 hover:text-white transition-colors">
-                  Privacidade
+                  Política de Privacidade
+                </Link>
+              </li>
+              <li>
+                <Link href="/exclusao-de-dados" className="text-gray-400 hover:text-white transition-colors">
+                  Exclusão de Dados
                 </Link>
               </li>
             </ul>
@@ -119,7 +124,20 @@ export default function Footer() {
         </div>
         
         <div className="border-t border-gray-700 mt-10 pt-6 text-center text-gray-400">
-          <p>&copy; {currentYear} Clube do Rabino. Todos os direitos reservados.</p>
+          <p className="mb-2">&copy; {currentYear} Clube do Rabino. Todos os direitos reservados.</p>
+          <div className="flex justify-center space-x-4 text-sm">
+            <Link href="/privacidade" className="hover:text-white transition-colors">
+              Privacidade
+            </Link>
+            <span className="text-gray-600">|</span>
+            <Link href="/termos" className="hover:text-white transition-colors">
+              Termos
+            </Link>
+            <span className="text-gray-600">|</span>
+            <Link href="/exclusao-de-dados" className="hover:text-white transition-colors">
+              Solicitar Exclusão de Dados
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
