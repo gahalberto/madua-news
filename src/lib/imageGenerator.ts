@@ -93,8 +93,29 @@ export async function generatePostBanner({
     } else if (imageUrl.startsWith('http')) {
       // Se for URL externa
       console.log('Baixando imagem de URL externa:', imageUrl);
-      const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-      imageBuffer = Buffer.from(response.data);
+      try {
+        const response = await axios.get(imageUrl, { 
+          responseType: 'arraybuffer',
+          timeout: 10000, // 10 segundos de timeout
+          headers: {
+            'User-Agent': 'Mozilla/5.0 Banner Generator',
+            'Cache-Control': 'no-cache'
+          }
+        });
+        imageBuffer = Buffer.from(response.data);
+        console.log(`Imagem baixada com sucesso: ${response.headers['content-type']}, tamanho: ${imageBuffer.length} bytes`);
+      } catch (error) {
+        console.error('Erro ao baixar imagem da URL:', error);
+        // Tentar usar uma imagem padrão em caso de falha
+        const defaultImagePath = path.join(process.cwd(), 'public', 'images', 'default-post-image.jpg');
+        console.log(`Tentando usar imagem padrão: ${defaultImagePath}`);
+        try {
+          imageBuffer = await fs.readFile(defaultImagePath);
+        } catch (fsError) {
+          console.error('Erro ao ler imagem padrão:', fsError);
+          throw new Error(`Não foi possível baixar a imagem da URL ${imageUrl} nem usar imagem padrão`);
+        }
+      }
     } else {
       // Se for caminho local
       const absoluteImagePath = imageUrl.startsWith('/')
@@ -102,65 +123,99 @@ export async function generatePostBanner({
         : imageUrl;
       
       console.log('Lendo imagem local:', absoluteImagePath);
-      imageBuffer = await fs.readFile(absoluteImagePath);
+      try {
+        imageBuffer = await fs.readFile(absoluteImagePath);
+        console.log(`Imagem local lida com sucesso: ${imageBuffer.length} bytes`);
+      } catch (fsError) {
+        console.error('Erro ao ler imagem local:', fsError);
+        const defaultImagePath = path.join(process.cwd(), 'public', 'images', 'default-post-image.jpg');
+        console.log(`Tentando usar imagem padrão após falha: ${defaultImagePath}`);
+        try {
+          imageBuffer = await fs.readFile(defaultImagePath);
+        } catch (defaultError) {
+          console.error('Erro ao ler imagem padrão:', defaultError);
+          throw new Error(`Não foi possível ler a imagem local ${absoluteImagePath} nem usar imagem padrão`);
+        }
+      }
     }
 
     console.log('Imagem carregada, iniciando processamento com sharp');
 
-    const image = await sharp(imageBuffer)
-      .resize(width, height, {
-        fit: 'cover',
-        position: 'center',
-      })
-      // Adicionar overlay escuro gradiente para melhor legibilidade
-      .composite([
-        {
-          input: {
-            create: {
-              width,
-              height,
-              channels: 4,
-              background: { r: 0, g: 0, b: 0, alpha: 0.2 }
-            }
+    try {
+      const image = await sharp(imageBuffer)
+        .resize(width, height, {
+          fit: 'cover',
+          position: 'center',
+        })
+        // Adicionar overlay escuro gradiente para melhor legibilidade
+        .composite([
+          {
+            input: {
+              create: {
+                width,
+                height,
+                channels: 4,
+                background: { r: 0, g: 0, b: 0, alpha: 0.2 }
+              }
+            },
+            blend: 'multiply',
           },
-          blend: 'multiply',
-        },
-        {
-          input: {
-            create: {
-              width,
-              height,
-              channels: 4,
-              background: { r: 0, g: 0, b: 0, alpha: 0.4 } // Aumentado de 0.3 para 0.4
-            }
+          {
+            input: {
+              create: {
+                width,
+                height,
+                channels: 4,
+                background: { r: 0, g: 0, b: 0, alpha: 0.4 } // Aumentado de 0.3 para 0.4
+              }
+            },
+            blend: 'overlay',
           },
-          blend: 'overlay',
-        },
-        {
-          input: Buffer.from(svgText),
-          top: 0,
-          left: 0,
-        }
-      ]);
+          {
+            input: Buffer.from(svgText),
+            top: 0,
+            left: 0,
+          }
+        ]);
 
-    // Definir caminho de saída
-    const fileName = `post-banner-${Date.now()}.png`;
-    const defaultOutputPath = path.join(process.cwd(), 'public', 'banners', fileName);
-    const finalOutputPath = outputPath || defaultOutputPath;
+      // Definir caminho de saída
+      const fileName = `post-banner-${Date.now()}.png`;
+      const defaultOutputPath = path.join(process.cwd(), 'public', 'banners', fileName);
+      const finalOutputPath = outputPath || defaultOutputPath;
 
-    // Garantir que o diretório existe
-    await fs.mkdir(path.dirname(finalOutputPath), { recursive: true });
+      // Garantir que o diretório existe
+      const dirPath = path.dirname(finalOutputPath);
+      try {
+        await fs.mkdir(dirPath, { recursive: true });
+        console.log(`Diretório garantido: ${dirPath}`);
+      } catch (mkdirError: any) {
+        console.error(`Erro ao criar diretório ${dirPath}:`, mkdirError);
+        throw new Error(`Não foi possível criar o diretório para salvar o banner: ${mkdirError.message}`);
+      }
 
-    console.log('Salvando banner em:', finalOutputPath);
+      console.log('Salvando banner em:', finalOutputPath);
 
-    // Salvar a imagem
-    await image.toFile(finalOutputPath);
+      // Salvar a imagem
+      await image.toFile(finalOutputPath);
 
-    const relativePath = `/banners/${fileName}`;
-    console.log('Banner gerado com sucesso:', relativePath);
+      // Verificar se o arquivo foi criado
+      try {
+        const stats = await fs.stat(finalOutputPath);
+        console.log(`Banner salvo com sucesso: ${stats.size} bytes`);
+      } catch (statError: any) {
+        console.error('Erro ao verificar arquivo salvo:', statError);
+        throw new Error(`Banner gerado mas não foi possível verificar o arquivo: ${statError.message}`);
+      }
 
-    // Retornar o caminho relativo para uso na aplicação
-    return relativePath;
+      const relativePath = `/banners/${fileName}`;
+      console.log('Banner gerado com sucesso:', relativePath);
+
+      // Retornar o caminho relativo para uso na aplicação
+      return relativePath;
+    } catch (sharpError: any) {
+      console.error('Erro no processamento do sharp:', sharpError);
+      throw new Error(`Erro ao processar imagem com sharp: ${sharpError.message}`);
+    }
   } catch (error) {
     console.error('Erro detalhado ao gerar banner:', {
       error,

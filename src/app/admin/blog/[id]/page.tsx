@@ -344,22 +344,81 @@ export default function EditBlogPostPage() {
     try {
       setIsSendingToInstagram(true);
       
-      // Gerar a URL para o banner com título
+      // Em vez de tentar usar a API de redirecionamento, vamos gerar o banner diretamente
+      // Primeiro obtemos a URL da imagem atual do post
+      let imageUrl = formData.imageUrl;
+      if (formData.imageFile) {
+        // Se há uma nova imagem, precisamos primeiro fazer upload
+        try {
+          const uploadFormData = new FormData();
+          uploadFormData.append("file", formData.imageFile);
+          uploadFormData.append("type", "instagram");
+          
+          console.log("Enviando imagem para upload antes do Instagram");
+          
+          const uploadResponse = await fetch("/api/upload?type=instagram", {
+            method: "POST",
+            body: uploadFormData,
+          });
+          
+          if (!uploadResponse.ok) {
+            throw new Error(`Erro no upload: ${uploadResponse.status}`);
+          }
+          
+          const { url } = await uploadResponse.json();
+          imageUrl = url;
+          console.log("URL pública obtida para o Instagram", { imageUrl });
+        } catch (uploadError) {
+          console.error("Erro durante upload para Instagram:", uploadError);
+          toast.error(`Erro no upload para Instagram: ${uploadError instanceof Error ? uploadError.message : "Erro desconhecido"}`);
+          setIsSendingToInstagram(false);
+          return;
+        }
+      }
+      
+      // Geramos o banner diretamente via POST
+      console.log("Gerando banner para Instagram");
+      
+      const generateResponse = await fetch('/api/generate-banner', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          imageUrl: imageUrl
+        }),
+      });
+      
+      if (!generateResponse.ok) {
+        const errorData = await generateResponse.json();
+        throw new Error(`Erro ao gerar banner: ${errorData.error || 'Erro desconhecido'}`);
+      }
+      
+      const { bannerUrl } = await generateResponse.json();
+      
+      if (!bannerUrl) {
+        throw new Error('URL do banner não foi retornada');
+      }
+      
+      // Construir a URL completa para o banner
       const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-      const bannerUrl = `${baseUrl}/api/generate-banner?title=${encodeURIComponent(formData.title)}&postId=${id}`;
+      const fullBannerUrl = `${baseUrl}${bannerUrl.startsWith('/') ? '' : '/'}${bannerUrl}`;
+      
+      console.log("Banner gerado com sucesso:", fullBannerUrl);
       
       // Prepara a legenda para o Instagram
       const caption = `${formData.title}\n\n${formData.excerpt}\n\nNotícia completa no nosso site, link na bio!`;
       
       // Primeiro, testar se a URL é acessível
-      console.log("Testando URL da imagem antes de enviar para Instagram", { bannerUrl });
+      console.log("Testando URL da imagem antes de enviar para Instagram", { bannerUrl: fullBannerUrl });
       
       const testResponse = await fetch('/api/test-image-url', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url: bannerUrl }),
+        body: JSON.stringify({ url: fullBannerUrl }),
       });
       
       const testResult = await testResponse.json();
@@ -380,7 +439,7 @@ export default function EditBlogPostPage() {
       }
       
       console.log("Enviando para Instagram", { 
-        bannerUrl, 
+        bannerUrl: fullBannerUrl, 
         captionLength: caption.length,
         imageTestResult: testResult 
       });
@@ -391,7 +450,7 @@ export default function EditBlogPostPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          imageUrl: bannerUrl,
+          imageUrl: fullBannerUrl,
           caption,
         }),
       });
