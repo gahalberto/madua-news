@@ -353,7 +353,49 @@ export default function EditBlogPostPage() {
       const caption = `${formData.title}\n\n${formData.excerpt}\n\nOlhe o link na bio para acessar nosso site e ler todo o artigo!`;
       
       // URL da imagem a ser usada
-      const imageUrl = imagePreview || formData.imageUrl;
+      let imageUrl = formData.imageUrl;
+      
+      // Se estamos usando um preview local (após upload), precisamos fazer upload da imagem primeiro
+      if (imagePreview && formData.imageFile) {
+        // Upload primeiro para obter uma URL pública
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", formData.imageFile);
+        uploadFormData.append("type", "instagram");
+        
+        try {
+          logDebug("Enviando imagem para upload antes do Instagram", { 
+            fileName: formData.imageFile.name, 
+            fileSize: formData.imageFile.size 
+          });
+          
+          const uploadResponse = await fetch("/api/upload?type=instagram", {
+            method: "POST",
+            body: uploadFormData,
+          });
+          
+          if (!uploadResponse.ok) {
+            throw new Error(`Erro no upload: ${uploadResponse.status}`);
+          }
+          
+          const { url } = await uploadResponse.json();
+          imageUrl = url;
+          logDebug("URL pública obtida para o Instagram", { imageUrl });
+        } catch (uploadError) {
+          console.error("Erro durante upload para Instagram:", uploadError);
+          toast.error(`Erro no upload para Instagram: ${uploadError instanceof Error ? uploadError.message : "Erro desconhecido"}`);
+          setIsSendingToInstagram(false);
+          return;
+        }
+      }
+      
+      // Garantir que a URL da imagem seja absolutamente pública
+      if (imageUrl && !imageUrl.startsWith('http')) {
+        // Se for uma URL relativa, convertemos para absoluta usando o domínio do site
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+        imageUrl = `${siteUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+      }
+      
+      logDebug("Enviando para Instagram", { imageUrl, captionLength: caption.length });
 
       const response = await fetch('/api/instagram-post', {
         method: 'POST',
@@ -366,12 +408,32 @@ export default function EditBlogPostPage() {
         }),
       });
 
+      const responseData = await response.json();
+      
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Erro ao enviar para o Instagram');
+        let errorMessage = 'Erro ao enviar para o Instagram';
+        
+        if (responseData.error) {
+          errorMessage = responseData.error;
+        }
+        
+        if (responseData.details) {
+          console.error('Detalhes do erro Instagram:', responseData.details);
+          // Verificar se os detalhes contêm mensagens específicas de erro do Instagram
+          if (typeof responseData.details === 'string' && responseData.details.includes('Sorry')) {
+            errorMessage += `: ${responseData.details.substring(0, 100)}`;
+          } else if (responseData.details.error_message) {
+            errorMessage += `: ${responseData.details.error_message}`;
+          } else if (responseData.details.message) {
+            errorMessage += `: ${responseData.details.message}`;
+          }
+        }
+        
+        throw new Error(errorMessage);
       }
 
       toast.success('Post enviado para o Instagram com sucesso!');
+      logDebug("Resposta do Instagram", responseData);
     } catch (error) {
       console.error('Erro ao enviar para o Instagram:', error);
       toast.error(error instanceof Error ? error.message : 'Erro ao enviar para o Instagram');
