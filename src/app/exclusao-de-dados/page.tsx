@@ -20,6 +20,7 @@ export default function DataDeletionPage() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [referenceId, setReferenceId] = useState('');
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -50,11 +51,6 @@ export default function DataDeletionPage() {
     setIsSubmitting(true);
     
     try {
-      // Simular envio para API (substituir por implementação real)
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      /*
-      // Implementação real seria algo como:
       const response = await fetch('/api/delete-user-data', {
         method: 'POST',
         headers: {
@@ -63,17 +59,19 @@ export default function DataDeletionPage() {
         body: JSON.stringify(formData),
       });
       
-      if (!response.ok) {
-        throw new Error('Erro ao enviar solicitação');
-      }
-      */
+      const data = await response.json();
       
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao enviar solicitação');
+      }
+      
+      setReferenceId(data.referenceId || '');
       toast.success("Solicitação de exclusão de dados enviada com sucesso!");
       setSubmitted(true);
       
     } catch (error) {
       console.error('Erro ao enviar solicitação:', error);
-      toast.error("Ocorreu um erro ao enviar sua solicitação. Por favor, tente novamente.");
+      toast.error(error instanceof Error ? error.message : "Ocorreu um erro ao enviar sua solicitação. Por favor, tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -94,7 +92,7 @@ export default function DataDeletionPage() {
               Você receberá um e-mail de confirmação assim que seus dados forem excluídos.
             </p>
             <p className="text-sm text-green-600 mt-4">
-              Número de referência: {Math.random().toString(36).substring(2, 10).toUpperCase()}
+              Número de referência: {referenceId || Math.random().toString(36).substring(2, 10).toUpperCase()}
             </p>
           </div>
         ) : (
