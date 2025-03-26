@@ -57,8 +57,8 @@ export async function generatePostBanner({
         <style>
           .title { 
             fill: #FFD700; /* Amarelo dourado */
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            font-size: 56px;
+            font-family: 'Futura', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-size: 44.5px;
             font-weight: bold;
             text-shadow: 
               3px 3px 0 #000,
