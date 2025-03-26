@@ -1,0 +1,8 @@
+===== Iniciando execução automática do scraper em Tue Mar 25 22:55:40 UTC 2025 =====
+Extraindo 10 artigos para o arquivo ynetnews_articles_2025-03-25_22-55-40.json
+=== Iniciando Web Scraper Ynet News ===
+
+Verificando dependências no ambiente virtual...
+Instalando biblioteca 'requests'...
+ERRO: Não foi possível instalar a biblioteca 'requests'.
+ERRO: Arquivo de saída ynetnews_articles_2025-03-25_22-55-40.json não foi criado. Abortando.
