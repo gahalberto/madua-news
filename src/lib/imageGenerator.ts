@@ -61,14 +61,15 @@ export async function generatePostBanner({
             font-size: 44.5px;
             font-weight: bold;
             text-shadow: 
-              3px 3px 0 #000,
-              -3px -3px 0 #000,
-              3px -3px 0 #000,
-              -3px 3px 0 #000,
-              0 3px 0 #000,
-              3px 0 0 #000,
-              0 -3px 0 #000,
-              -3px 0 0 #000;
+              3px 3px 6px rgba(0,0,0,0.9),
+              -3px -3px 6px rgba(0,0,0,0.9),
+              3px -3px 6px rgba(0,0,0,0.9),
+              -3px 3px 6px rgba(0,0,0,0.9),
+              0 3px 6px rgba(0,0,0,0.9),
+              3px 0 6px rgba(0,0,0,0.9),
+              0 -3px 6px rgba(0,0,0,0.9),
+              -3px 0 6px rgba(0,0,0,0.9),
+              0 0 15px rgba(0,0,0,0.8);
           }
         </style>
         ${lines.map((line, index) => `
