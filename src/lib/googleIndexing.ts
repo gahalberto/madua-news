@@ -129,7 +129,7 @@ export async function indexMultipleUrls(urls: string[], action: IndexingAction =
 export async function getLatestArticleUrls(limit: number = 10): Promise<string[]> {
   try {
     // Importar o prisma apenas quando necessário para evitar problemas de SSR
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('../lib/prisma');
     
     // Buscar os artigos mais recentes
     const articles = await prisma.post.findMany({
