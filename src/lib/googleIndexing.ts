@@ -132,12 +132,15 @@ export async function getLatestArticleUrls(limit: number = 10): Promise<string[]
     const { prisma } = await import('@/lib/prisma');
     
     // Buscar os artigos mais recentes
-    const articles = await prisma.article.findMany({
+    const articles = await prisma.post.findMany({
       where: {
-        status: 'PUBLISHED',
+        published: true,
+        slug: {
+          not: null
+        }
       },
       orderBy: {
-        publishedAt: 'desc',
+        updatedAt: 'desc',
       },
       take: limit,
       select: {
@@ -147,8 +150,10 @@ export async function getLatestArticleUrls(limit: number = 10): Promise<string[]
 
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://madua.com.br';
     
-    // Formatar as URLs completas
-    return articles.map(article => `${baseUrl}/noticias/${article.slug}`);
+    // Formatar as URLs completas e filtrar slugs nulos
+    return articles
+      .filter((article): article is { slug: string } => article.slug !== null)
+      .map(article => `${baseUrl}/noticias/${article.slug}`);
   } catch (error) {
     console.error('[GoogleIndexing] Erro ao obter URLs de artigos recentes:', error);
     return [];

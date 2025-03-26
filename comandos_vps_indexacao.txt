@@ -1,0 +1,23 @@
+# Comandos para atualizar a VPS após git pull (Sistema de Indexação)
+
+# 1. Instalar novas dependências
+npm install
+
+# 2. Verificar se o arquivo de script é executável
+chmod +x scripts/indexing.sh
+
+# 3. Gerar o cliente Prisma
+npx prisma generate
+
+# 4. Reconstruir a aplicação
+npm run build
+
+# 5. Reiniciar a aplicação (assumindo uso de PM2)
+pm2 restart madua
+
+# 6. Para configurar a CRON job (executar uma única vez)
+echo "0 9,12,15,18,21 * * * cd /home/gabriel/projetos/course-dashboard && bash scripts/indexing.sh >> /var/log/indexing.log 2>&1" | crontab -
+
+# 7. Para testar se o script de indexação está funcionando
+npm run indexing:debug
+

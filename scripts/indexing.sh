@@ -37,7 +37,7 @@ fi
 
 # Executar o script TypeScript
 echo "Executando script de indexação..."
-npx ts-node src/scripts/indexing-cron.ts
+npx ts-node --project tsconfig.json.cron src/scripts/indexing-cron.ts
 
 # Verificar o resultado da execução
 if [ $? -eq 0 ]; then

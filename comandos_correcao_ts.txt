@@ -1,0 +1,33 @@
+# Comandos para corrigir o erro de execução do script TypeScript na VPS
+
+# 1. Instalar o ts-node e typescript globalmente
+npm install -g ts-node typescript
+
+# 2. Criar arquivo tsconfig.json.cron específico para scripts cron
+cat > tsconfig.json.cron << 'EOL'
+{
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+EOL
+
+# 3. Modificar o script indexing.sh para usar o tsconfig específico
+sed -i 's/npx ts-node src\/scripts\/indexing-cron.ts/npx ts-node --project tsconfig.json.cron src\/scripts\/indexing-cron.ts/g' scripts/indexing.sh
+
+# 4. Adicionar script no package.json para indexação com configuração específica
+sed -i 's/"indexing:debug": "npx ts-node src\/scripts\/indexing-cron.ts"/"indexing:debug": "npx ts-node --project tsconfig.json.cron src\/scripts\/indexing-cron.ts"/g' package.json
+
+# 5. Teste novamente
+npm run indexing:debug
+
