@@ -1,0 +1,46 @@
+# Comandos finais para VPS após correções - Indexação Google
+
+# 1. Atualizar os arquivos com as correções feitas
+git pull
+
+# 2. Instalar dependências
+npm install
+
+# 3. Tornar o script de indexação executável
+chmod +x scripts/indexing.sh
+
+# 4. Criar ou atualizar o arquivo tsconfig.json.cron
+cat > tsconfig.json.cron << 'EOL'
+{
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+EOL
+
+# 5. Gerar o cliente Prisma
+npx prisma generate
+
+# 6. Reconstruir a aplicação
+npm run build
+
+# 7. Reiniciar a aplicação
+pm2 restart madua
+
+# 8. Configurar o cron job (executar uma única vez)
+echo "0 9,12,15,18,21 * * * cd /var/www/madua && bash scripts/indexing.sh >> /var/log/indexing.log 2>&1" | crontab -
+
+# 9. Verificar se o cron job foi configurado corretamente
+crontab -l
+
