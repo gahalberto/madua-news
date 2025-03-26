@@ -16,29 +16,53 @@ interface Post {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://madua.com.br'
 
-  // Páginas estáticas
+  // Páginas estáticas públicas
   const staticPages = [
-    '',
-    '/sobre',
-    '/contato',
-    '/blog',
-    '/cursos',
-    '/privacidade',
-    '/termos',
-    '/exclusao-de-dados',
-    '/admin',
-    '/admin/courses',
-    '/admin/lessons',
-    '/admin/blog',
-    '/admin/articles',
-    '/admin/products',
-    '/admin/ebooks',
-    '/admin/contacts',
-  ].map((route) => ({
+    {
+      route: '',
+      priority: 1.0,
+      changeFrequency: 'daily' as const
+    },
+    {
+      route: '/cursos',
+      priority: 0.9,
+      changeFrequency: 'daily' as const
+    },
+    {
+      route: '/blog',
+      priority: 0.8,
+      changeFrequency: 'daily' as const
+    },
+    {
+      route: '/sobre',
+      priority: 0.7,
+      changeFrequency: 'monthly' as const
+    },
+    {
+      route: '/contato',
+      priority: 0.7,
+      changeFrequency: 'monthly' as const
+    },
+    {
+      route: '/privacidade',
+      priority: 0.5,
+      changeFrequency: 'yearly' as const
+    },
+    {
+      route: '/termos',
+      priority: 0.5,
+      changeFrequency: 'yearly' as const
+    },
+    {
+      route: '/exclusao-de-dados',
+      priority: 0.5,
+      changeFrequency: 'yearly' as const
+    }
+  ].map(({ route, priority, changeFrequency }) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
-    changeFrequency: 'daily' as const,
-    priority: route === '' ? 1 : 0.8,
+    changeFrequency,
+    priority
   }))
 
   // Buscar cursos dinâmicos
@@ -55,7 +79,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${baseUrl}/cursos/${course.slug}`,
       lastModified: course.updatedAt,
       changeFrequency: 'weekly' as const,
-      priority: 0.7,
+      priority: 0.8,
     }))
 
   // Buscar posts do blog dinâmicos
@@ -72,7 +96,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${baseUrl}/blog/${post.slug}`,
       lastModified: post.updatedAt,
       changeFrequency: 'weekly' as const,
-      priority: 0.6,
+      priority: 0.7,
     }))
 
   return [...staticPages, ...coursePages, ...blogPages]
