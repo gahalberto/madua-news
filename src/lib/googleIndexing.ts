@@ -50,8 +50,9 @@ async function createAuthorizedClient(credentials: GoogleCredentials): Promise<J
 export async function indexUrl(url: string, action: IndexingAction = 'URL_UPDATED'): Promise<IndexingResult> {
   try {
     // Verifica se as credenciais existem no ambiente
-    const clientEmail = process.env.GOOGLE_INDEXING_CLIENT_EMAIL;
-    const privateKey = process.env.GOOGLE_INDEXING_PRIVATE_KEY;
+    // Compatibilidade com ambos os formatos de nome de variável
+    const clientEmail = process.env.GOOGLE_INDEXING_CLIENT_EMAIL || process.env.GOOGLE_CLIENT_EMAIL;
+    const privateKey = process.env.GOOGLE_INDEXING_PRIVATE_KEY || process.env.GOOGLE_PRIVATE_KEY;
 
     if (!clientEmail || !privateKey) {
       throw new Error('Credenciais do Google não configuradas nas variáveis de ambiente');
