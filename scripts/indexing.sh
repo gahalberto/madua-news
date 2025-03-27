@@ -18,7 +18,15 @@ echo "Data e hora: $(date)"
 # Carregar variáveis de ambiente, se existirem
 if [ -f ".env" ]; then
     echo "Carregando variáveis de ambiente do arquivo .env"
-    export $(grep -v '^#' .env | xargs)
+    # Método mais seguro para carregar variáveis com caracteres especiais
+    while IFS='=' read -r key value || [[ -n "$key" ]]; do
+        # Ignorar linhas de comentário
+        [[ $key == \#* ]] && continue
+        # Ignorar linhas vazias
+        [[ -z "$key" ]] && continue
+        # Exportar a variável
+        export "$key"="$value"
+    done < .env
 else
     echo "AVISO: Arquivo .env não encontrado."
 fi
