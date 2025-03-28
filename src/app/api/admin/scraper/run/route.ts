@@ -14,7 +14,7 @@ async function runScraper(): Promise<{ success: boolean; message: string; detail
     const scriptPath = path.join(process.cwd(), 'scraper_auto.sh');
     
     // Executar o script shell usando o ambiente virtual venv
-    const command = `cd ${process.cwd()} && source venv/bin/activate && bash ${scriptPath}`;
+    const command = `/bin/bash -c "cd ${process.cwd()} && . venv/bin/activate && bash ${scriptPath}"`;
     
     const { stdout, stderr } = await execPromise(command);
     
