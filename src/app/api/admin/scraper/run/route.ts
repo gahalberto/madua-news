@@ -1,96 +1,40 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs';
-
-const execPromise = promisify(exec);
+import YnetNewsScraper from '@/utils/ynetnewsScraper';
 
 // Função para executar o scraper
 async function runScraper(): Promise<{ success: boolean; message: string; details?: Record<string, unknown> }> {
   try {
-    // Executar o script Python usando o Python do ambiente virtual
-    const scriptPath = path.join(process.cwd(), 'ynetnews_scraper.py');
+    console.log("Iniciando o scraper JavaScript...");
     
-    // Verificar primeiro qual ambiente virtual está disponível
-    let pythonCommand;
+    // Criar uma instância do scraper
+    const scraper = new YnetNewsScraper();
     
-    if (fs.existsSync(path.join(process.cwd(), 'venv/bin/python3'))) {
-      pythonCommand = path.join(process.cwd(), 'venv/bin/python3');
-      console.log("Usando Python do ambiente virtual 'venv'");
-    } else if (fs.existsSync(path.join(process.cwd(), '.venv/bin/python3'))) {
-      pythonCommand = path.join(process.cwd(), '.venv/bin/python3');
-      console.log("Usando Python do ambiente virtual '.venv'");
-    } else {
-      // Alternativa - tentar instalar via apt se estiver disponível
-      try {
-        console.log("Tentando instalar dependências via apt...");
-        await execPromise("apt-get update && apt-get install -y python3-bs4 python3-requests");
-        pythonCommand = "python3";
-      } catch (aptError) {
-        console.warn("Não foi possível instalar via apt:", aptError);
-        pythonCommand = "python3"; // Usar Python padrão mesmo assim
-      }
-    }
+    // Executar o scraping de 10 artigos
+    console.log("Extraindo artigos...");
+    const articles = await scraper.scrapeArticles(10);
     
-    const command = `${pythonCommand} ${scriptPath}`;
+    // Salvar resultado em arquivo JSON
+    const outputPath = path.join(process.cwd(), 'ynetnews_articles.json');
+    scraper.saveToJson(outputPath);
     
-    console.log(`Executando comando: ${command}`);
-    const { stdout, stderr } = await execPromise(command);
+    console.log(`Scraping concluído. ${articles.length} artigos extraídos.`);
     
-    if (stderr && !stderr.includes('Iniciando extração')) {
-      console.error('Erro ao executar o scraper:', stderr);
-      return { success: false, message: `Erro na execução: ${stderr}` };
-    }
-    
-    console.log('Saída do scraper:', stdout);
-    
-    // Tentar extrair estatísticas da saída
-    let stats = { received: 0, saved: 0, duplicates: 0, errors: 0 };
-    try {
-      // Procurar por uma linha JSON com estatísticas na saída - regex mais robusto
-      const statsMatch = stdout.match(/\{"message"[^{]*"stats":\s*(\{[^}]+\})/);
-      if (statsMatch && statsMatch[1]) {
-        // Extrair apenas o objeto stats
-        try {
-          const statsObj = JSON.parse(`{${statsMatch[1].replace(/,$/, '')}}`);
-          stats = statsObj;
-          console.log('Estatísticas extraídas com sucesso:', stats);
-        } catch (innerError) {
-          console.warn('Erro ao parsear objeto de estatísticas:', innerError);
-          console.warn('Texto encontrado:', statsMatch[1]);
-        }
-      } else {
-        // Alternativa: extrair valores diretamente das linhas de resumo
-        const receivedMatch = stdout.match(/Artigos recebidos: (\d+)/);
-        const savedMatch = stdout.match(/Artigos novos salvos: (\d+)/);
-        const duplicatesMatch = stdout.match(/Artigos duplicados ignorados: (\d+)/);
-        const errorsMatch = stdout.match(/Erros durante processamento: (\d+)/);
-        
-        if (receivedMatch) stats.received = parseInt(receivedMatch[1]);
-        if (savedMatch) stats.saved = parseInt(savedMatch[1]);
-        if (duplicatesMatch) stats.duplicates = parseInt(duplicatesMatch[1]);
-        if (errorsMatch) stats.errors = parseInt(errorsMatch[1]);
-        
-        console.log('Estatísticas extraídas do texto de resumo:', stats);
-      }
-    } catch (parseError) {
-      console.warn('Não foi possível extrair estatísticas da saída:', parseError);
-      console.warn('Trecho da saída:', stdout.substring(0, 500) + '...');
-    }
+    // Estatísticas básicas
+    const stats = {
+      received: articles.length,
+      saved: articles.length,
+      duplicates: 0,
+      errors: 0
+    };
     
     // Criar mensagem com base nas estatísticas
     let message = 'Scraper executado com sucesso.';
     if (stats.saved > 0) {
-      message += ` ${stats.saved} novos artigos importados.`;
-    }
-    if (stats.duplicates > 0) {
-      message += ` ${stats.duplicates} artigos duplicados ignorados.`;
-    }
-    if (stats.errors > 0) {
-      message += ` ${stats.errors} erros encontrados.`;
+      message += ` ${stats.saved} novos artigos extraídos.`;
     }
     
     return { 
@@ -99,7 +43,7 @@ async function runScraper(): Promise<{ success: boolean; message: string; detail
       details: { stats }
     };
   } catch (error) {
-    console.error('Erro ao executar o script de scraper:', error);
+    console.error('Erro ao executar o scraper:', error);
     return { 
       success: false, 
       message: `Erro ao executar o scraper: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
