@@ -1,9 +1,7 @@
 import axios from 'axios';
-import cheerio from 'cheerio';
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { URL } from 'url';
 
 export default class YnetNewsScraper {
   constructor() {
@@ -31,6 +29,13 @@ export default class YnetNewsScraper {
         return [];
       }
       
+      // Importar cheerio dinamicamente
+      const cheerio = await import('cheerio');
+      // Verificar se cheerio está disponível
+      if (!cheerio || !cheerio.load) {
+        throw new Error('Cheerio não está disponível');
+      }
+      
       const $ = cheerio.load(response.data);
       const articleLinks = [];
       
@@ -48,7 +53,26 @@ export default class YnetNewsScraper {
       return articleLinks;
     } catch (error) {
       console.error(`Erro ao extrair links: ${error.message}`);
-      return [];
+      
+      // Método alternativo: extrair links com regex se o cheerio falhar
+      try {
+        console.log("Tentando método alternativo para extrair links...");
+        const response = await axios.get(this.categoryUrl, { headers: this.headers });
+        const htmlContent = response.data;
+        
+        // Regex para encontrar URLs de artigos
+        const articlePattern = /https:\/\/www\.ynetnews\.com\/article\/[a-zA-Z0-9]+/g;
+        const matches = htmlContent.match(articlePattern) || [];
+        
+        // Remover duplicatas
+        const uniqueLinks = [...new Set(matches)];
+        console.log(`Encontrados ${uniqueLinks.length} links de artigos (método alternativo)`);
+        
+        return uniqueLinks;
+      } catch (fallbackError) {
+        console.error(`Erro no método alternativo: ${fallbackError.message}`);
+        return [];
+      }
     }
   }
 
@@ -173,6 +197,13 @@ export default class YnetNewsScraper {
         return null;
       }
       
+      // Importar cheerio dinamicamente
+      const cheerio = await import('cheerio');
+      // Verificar se cheerio está disponível
+      if (!cheerio || !cheerio.load) {
+        throw new Error('Cheerio não está disponível');
+      }
+      
       const $ = cheerio.load(response.data);
       
       // Extrair título
@@ -208,6 +239,23 @@ export default class YnetNewsScraper {
         }
       }
       
+      // Método alternativo para extrair imagens
+      if (!mainImageUrl) {
+        // Tentar encontrar qualquer imagem na página que pareça ser principal
+        const allImages = $('img');
+        for (let i = 0; i < allImages.length; i++) {
+          const img = allImages.eq(i);
+          const imgSrc = img.attr('src');
+          // Verificar se parece uma imagem de artigo do Ynet
+          if (imgSrc && imgSrc.includes('ynet-pic') && imgSrc.includes('large.jpg')) {
+            mainImageUrl = imgSrc;
+            console.log(`Imagem principal encontrada (método 3): ${mainImageUrl}`);
+            mainImageLocalPath = await this.downloadImage(mainImageUrl, title);
+            break;
+          }
+        }
+      }
+      
       // Extrair conteúdo do artigo
       let content = "";
       $('.text_editor_paragraph').each((_, paragraph) => {
@@ -215,6 +263,17 @@ export default class YnetNewsScraper {
           content += $(span).text().trim() + "\n\n";
         });
       });
+      
+      // Método alternativo para extrair conteúdo
+      if (!content.trim()) {
+        // Tentar encontrar todos os parágrafos na área de conteúdo
+        $('div.mainContent p, article p').each((_, p) => {
+          const text = $(p).text().trim();
+          if (text) {
+            content += text + "\n\n";
+          }
+        });
+      }
       
       // Filtrar conteúdo para remover textos indesejados
       const filteredContent = this.filterUnwantedContent(content);
@@ -255,7 +314,54 @@ export default class YnetNewsScraper {
       return article;
     } catch (error) {
       console.error(`Erro ao extrair conteúdo do artigo: ${error.message}`);
-      return null;
+      
+      // Método alternativo: Extrair informações básicas do artigo com regex
+      try {
+        console.log(`Tentando método alternativo para extrair artigo ${url}...`);
+        const response = await axios.get(url, { headers: this.headers });
+        const htmlContent = response.data;
+        
+        // Extrair título com regex
+        let title = "Título não encontrado";
+        const titleMatch = htmlContent.match(/<h1[^>]*class="mainTitle"[^>]*>(.*?)<\/h1>/s);
+        if (titleMatch && titleMatch[1]) {
+          title = titleMatch[1].replace(/<[^>]*>/g, '').trim();
+        }
+        
+        // Extrair subtítulo com regex
+        let subtitle = "Subtítulo não encontrado";
+        const subtitleMatch = htmlContent.match(/<span[^>]*class="subTitle"[^>]*>(.*?)<\/span>/s);
+        if (subtitleMatch && subtitleMatch[1]) {
+          subtitle = subtitleMatch[1].replace(/<[^>]*>/g, '').trim();
+        }
+        
+        // Extrair imagem com regex
+        let mainImageUrl = null;
+        let mainImageLocalPath = null;
+        const imageMatch = htmlContent.match(/src="(https:\/\/ynet-pic[^"]*large\.jpg)"/);
+        if (imageMatch && imageMatch[1]) {
+          mainImageUrl = imageMatch[1];
+          mainImageLocalPath = await this.downloadImage(mainImageUrl, title);
+        }
+        
+        // Criar objeto de artigo básico
+        const basicArticle = {
+          url,
+          title,
+          description: subtitle,
+          content: "Conteúdo não extraído devido a erro. Verifique diretamente no site.",
+          main_image: {
+            original_url: mainImageUrl,
+            local_path: mainImageLocalPath
+          },
+          content_images: []
+        };
+        
+        return basicArticle;
+      } catch (fallbackError) {
+        console.error(`Erro no método alternativo: ${fallbackError.message}`);
+        return null;
+      }
     }
   }
 
