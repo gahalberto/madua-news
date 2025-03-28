@@ -13,8 +13,8 @@ async function runScraper(): Promise<{ success: boolean; message: string; detail
     // Usar caminho absoluto para o script
     const scriptPath = path.join(process.cwd(), 'scraper_auto.sh');
     
-    // Executar o script shell
-    const command = `bash ${scriptPath}`;
+    // Executar o script shell usando o ambiente virtual venv
+    const command = `cd ${process.cwd()} && source venv/bin/activate && bash ${scriptPath}`;
     
     const { stdout, stderr } = await execPromise(command);
     
@@ -87,7 +87,7 @@ async function runScraper(): Promise<{ success: boolean; message: string; detail
 
 export async function POST() {
   try {
-        // Executar o scraper
+    // Executar o scraper
     const result = await runScraper();
     
     if (result.success) {
