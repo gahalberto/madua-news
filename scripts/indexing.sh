@@ -1,8 +1,13 @@
 #!/bin/bash
+export NODE_OPTIONS=--openssl-legacy-provider
 
 # Script para executar a indexação do Google
 # Este script pode ser chamado diretamente pelo crontab
+set -a
+source .env
+set +a
 
+export GOOGLE_INDEXING_PRIVATE_KEY=$(echo "$GOOGLE_INDEXING_PRIVATE_KEY" | sed 's/PRIVATE KEY-----/PRIVATE KEY-----\n/g' | sed 's/-----END/\n-----END/g')
 # Navegar para o diretório raiz do projeto
 cd "$(dirname "$0")/.."
 
