@@ -1,13 +1,8 @@
 #!/bin/bash
-export NODE_OPTIONS=--openssl-legacy-provider
 
 # Script para executar a indexação do Google
 # Este script pode ser chamado diretamente pelo crontab
-set -a
-source .env
-set +a
 
-export GOOGLE_INDEXING_PRIVATE_KEY=$(echo "$GOOGLE_INDEXING_PRIVATE_KEY" | sed 's/PRIVATE KEY-----/PRIVATE KEY-----\n/g' | sed 's/-----END/\n-----END/g')
 # Navegar para o diretório raiz do projeto
 cd "$(dirname "$0")/.."
 
@@ -23,15 +18,9 @@ echo "Data e hora: $(date)"
 # Carregar variáveis de ambiente, se existirem
 if [ -f ".env" ]; then
     echo "Carregando variáveis de ambiente do arquivo .env"
-    # Método mais seguro para carregar variáveis com caracteres especiais
-    while IFS='=' read -r key value || [[ -n "$key" ]]; do
-        # Ignorar linhas de comentário
-        [[ $key == \#* ]] && continue
-        # Ignorar linhas vazias
-        [[ -z "$key" ]] && continue
-        # Exportar a variável
-        export "$key"="$value"
-    done < .env
+    # Carregar o arquivo .env e exportar variáveis
+    eval "$(cat .env | sed 's/\r$//' | sed 's/\\n/\
+/g' | sed '/^\s*$/d' | sed '/^#/d' | sed 's/^/export /')"
 else
     echo "AVISO: Arquivo .env não encontrado."
 fi
@@ -44,8 +33,8 @@ if [ -z "$GOOGLE_INDEXING_CLIENT_EMAIL" ] || [ -z "$GOOGLE_INDEXING_PRIVATE_KEY"
 fi
 
 # Verificar se a URL do site está configurada
-if [ -z "$NEXT_PUBLIC_SITE_URL" ]; then
-    echo "AVISO: NEXT_PUBLIC_SITE_URL não está configurado. Usando URL padrão."
+if [ -z "$SITE_URL" ]; then
+    echo "AVISO: SITE_URL não está configurado. Usando URL padrão."
 fi
 
 # Verificar se temos permissão para executar o script de correção de módulos
@@ -70,4 +59,4 @@ else
 fi
 
 echo "=== Processo de indexação concluído ==="
-echo "Data e hora de término: $(date)" 
+echo "Data e hora de término: $(date)"
