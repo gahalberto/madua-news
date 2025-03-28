@@ -4,6 +4,25 @@ import { authOptions } from '@/lib/auth';
 import path from 'path';
 import fs from 'fs';
 import YnetNewsScraper from '@/utils/ynetnewsScraper';
+import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
+
+interface ArticleImage {
+  original_url: string;
+  local_path: string;
+}
+
+interface Article {
+  title: string;
+  description: string;
+  content: string;
+  url: string;
+  main_image: {
+    original_url: string;
+    local_path: string;
+  };
+  content_images: ArticleImage[];
+}
 
 // Função para executar o scraper
 async function runScraper(): Promise<{ success: boolean; message: string; details?: Record<string, unknown> }> {
@@ -23,18 +42,89 @@ async function runScraper(): Promise<{ success: boolean; message: string; detail
     
     console.log(`Scraping concluído. ${articles.length} artigos extraídos.`);
     
-    // Estatísticas básicas
-    const stats = {
+    // Processar cada artigo
+    let stats = {
       received: articles.length,
-      saved: articles.length,
+      saved: 0,
       duplicates: 0,
       errors: 0
     };
     
+    for (const article of articles) {
+      try {
+        // Verificar se o artigo já existe
+        const existingArticle = await prisma.scrapedArticle.findFirst({
+          where: {
+            OR: [
+              { sourceUrl: article.url },
+              { title: article.title }
+            ]
+          }
+        });
+        
+        if (existingArticle) {
+          console.log(`Artigo já existe: "${article.title}"`);
+          stats.duplicates++;
+          continue;
+        }
+        
+        // Criar o artigo no banco
+        const newArticle = await prisma.scrapedArticle.create({
+          data: {
+            title: article.title,
+            description: article.description,
+            content: article.content,
+            sourceUrl: article.url,
+            source: 'YNET_NEWS',
+            status: 'PENDING',
+            rawData: JSON.stringify({
+              main_image: article.main_image,
+              content_images: article.content_images
+            })
+          }
+        });
+        
+        console.log(`Artigo salvo: "${article.title}"`);
+        stats.saved++;
+        
+        // Enviar para tradução
+        try {
+          const translationResponse = await fetch('/api/admin/translate-article', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              articleId: newArticle.id
+            })
+          });
+          
+          if (!translationResponse.ok) {
+            throw new Error(`Erro ao iniciar tradução: ${translationResponse.statusText}`);
+          }
+          
+          console.log(`Tradução iniciada para o artigo: "${article.title}"`);
+        } catch (translationError) {
+          console.error(`Erro ao enviar para tradução: ${translationError instanceof Error ? translationError.message : 'Erro desconhecido'}`);
+          stats.errors++;
+        }
+        
+      } catch (articleError) {
+        console.error(`Erro ao processar artigo: ${articleError instanceof Error ? articleError.message : 'Erro desconhecido'}`);
+        stats.errors++;
+      }
+    }
+    
     // Criar mensagem com base nas estatísticas
     let message = 'Scraper executado com sucesso.';
     if (stats.saved > 0) {
-      message += ` ${stats.saved} novos artigos extraídos.`;
+      message += ` ${stats.saved} novos artigos salvos.`;
+    }
+    if (stats.duplicates > 0) {
+      message += ` ${stats.duplicates} artigos duplicados ignorados.`;
+    }
+    if (stats.errors > 0) {
+      message += ` ${stats.errors} erros encontrados.`;
     }
     
     return { 
