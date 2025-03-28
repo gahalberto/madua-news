@@ -4,24 +4,38 @@ import { authOptions } from '@/lib/auth';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
+import fs from 'fs';
 
 const execPromise = promisify(exec);
 
 // Função para executar o scraper
 async function runScraper(): Promise<{ success: boolean; message: string; details?: Record<string, unknown> }> {
   try {
-    // Instalar beautifulsoup4 diretamente
-    try {
-      console.log("Instalando dependências necessárias...");
-      await execPromise("pip3 install --user beautifulsoup4 requests");
-    } catch (pipError) {
-      console.warn("Aviso ao instalar dependências:", pipError);
-      // Continuar mesmo se houver erro na instalação
+    // Executar o script Python usando o Python do ambiente virtual
+    const scriptPath = path.join(process.cwd(), 'ynetnews_scraper.py');
+    
+    // Verificar primeiro qual ambiente virtual está disponível
+    let pythonCommand;
+    
+    if (fs.existsSync(path.join(process.cwd(), 'venv/bin/python3'))) {
+      pythonCommand = path.join(process.cwd(), 'venv/bin/python3');
+      console.log("Usando Python do ambiente virtual 'venv'");
+    } else if (fs.existsSync(path.join(process.cwd(), '.venv/bin/python3'))) {
+      pythonCommand = path.join(process.cwd(), '.venv/bin/python3');
+      console.log("Usando Python do ambiente virtual '.venv'");
+    } else {
+      // Alternativa - tentar instalar via apt se estiver disponível
+      try {
+        console.log("Tentando instalar dependências via apt...");
+        await execPromise("apt-get update && apt-get install -y python3-bs4 python3-requests");
+        pythonCommand = "python3";
+      } catch (aptError) {
+        console.warn("Não foi possível instalar via apt:", aptError);
+        pythonCommand = "python3"; // Usar Python padrão mesmo assim
+      }
     }
     
-    // Executar o script Python diretamente
-    const scriptPath = path.join(process.cwd(), 'ynetnews_scraper.py');
-    const command = `python3 ${scriptPath}`;
+    const command = `${pythonCommand} ${scriptPath}`;
     
     console.log(`Executando comando: ${command}`);
     const { stdout, stderr } = await execPromise(command);
