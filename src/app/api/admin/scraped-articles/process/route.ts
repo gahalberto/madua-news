@@ -114,7 +114,8 @@ export async function POST(request: NextRequest) {
       5. Use parágrafos para separar o conteúdo e facilitar a leitura
       6. O conteúdo deve ter pelo menos 500 caracteres
       7. Escolha 10 hashtags relevantes para o assunto do artigo, em português
-      8. Retorne APENAS o JSON como resposta, sem nenhum texto adicional
+      8. Identifique 5 palavras-chave principais relacionadas ao artigo
+      9. Retorne APENAS o JSON como resposta, sem nenhum texto adicional
       
       TÍTULO ORIGINAL: ${article.title}
       
@@ -130,7 +131,8 @@ export async function POST(request: NextRequest) {
         "content": "Conteúdo completo em português, separado em parágrafos. Deve conter toda a informação do original, mas em português.",
         "metaTitle": "Título SEO (até 60 caracteres)",
         "metaDescription": "Descrição SEO (até 160 caracteres)",
-        "hashtags": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5", "hashtag6", "hashtag7", "hashtag8", "hashtag9", "hashtag10"]
+        "hashtags": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5", "hashtag6", "hashtag7", "hashtag8", "hashtag9", "hashtag10"],
+        "keywords": ["palavra-chave1", "palavra-chave2", "palavra-chave3", "palavra-chave4", "palavra-chave5"]
       }
       
       LEMBRE-SE: O campo "content" deve conter TODO o conteúdo traduzido, não apenas um resumo.
@@ -191,6 +193,7 @@ export async function POST(request: NextRequest) {
               parsedResponse.metaTitle = parsedResponse.metaTitle || parsedResponse.title.substring(0, 60);
               parsedResponse.metaDescription = parsedResponse.metaDescription || parsedResponse.excerpt.substring(0, 160);
               parsedResponse.hashtags = parsedResponse.hashtags || [];
+              parsedResponse.keywords = parsedResponse.keywords || [];
               
               if (!parsedResponse.title || !parsedResponse.content || !parsedResponse.excerpt) {
                 console.warn(`Resposta da DeepSeek não possui campos obrigatórios. Tentando novamente...`);
@@ -211,6 +214,40 @@ export async function POST(request: NextRequest) {
                 attempts++;
                 await sleep(1000 * attempts);
                 continue;
+              }
+              
+              // Garantir que temos 10 hashtags
+              if (parsedResponse.hashtags.length < 10) {
+                console.warn(`Número insuficiente de hashtags (${parsedResponse.hashtags.length}). Completando até 10...`);
+                // Completar com hashtags genéricas baseadas no título se faltar
+                const titleWords = parsedResponse.title.split(' ')
+                  .filter((word: string) => word.length > 3)
+                  .map((word: string) => word.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+                
+                while (parsedResponse.hashtags.length < 10 && titleWords.length > 0) {
+                  const word = titleWords.shift();
+                  if (word && !parsedResponse.hashtags.includes(word)) {
+                    parsedResponse.hashtags.push(word);
+                  }
+                }
+                
+                // Se ainda precisar completar
+                const defaultHashtags = ['noticia', 'brasil', 'internacional', 'informacao', 'atualidade', 'mundo', 'acontecimento', 'maduanews', 'atualizacao', 'destaque'];
+                let i = 0;
+                while (parsedResponse.hashtags.length < 10 && i < defaultHashtags.length) {
+                  if (!parsedResponse.hashtags.includes(defaultHashtags[i])) {
+                    parsedResponse.hashtags.push(defaultHashtags[i]);
+                  }
+                  i++;
+                }
+              }
+              
+              // Garantir que temos pelo menos 5 palavras-chave
+              if (parsedResponse.keywords.length < 5) {
+                console.warn(`Número insuficiente de palavras-chave (${parsedResponse.keywords.length}). Completando até 5...`);
+                // Usar hashtags como fonte de palavras-chave se necessário
+                const keywordsFromHashtags = parsedResponse.hashtags.slice(0, 5 - parsedResponse.keywords.length);
+                parsedResponse.keywords = [...parsedResponse.keywords, ...keywordsFromHashtags];
               }
               
               // Se chegou aqui, a resposta é válida
@@ -272,6 +309,7 @@ export async function POST(request: NextRequest) {
           metaTitle: article.title.substring(0, 60),
           metaDescription: article.description ? article.description.substring(0, 160) : `Artigo de ${article.source}`,
           hashtags: [],
+          keywords: [],
         };
       }
 
@@ -411,31 +449,48 @@ export async function POST(request: NextRequest) {
 
       // Cria o post no blog
       console.log(`Criando post com título: ${processedArticle.title} e imagem: ${featuredImage || 'sem imagem'}`);
+      
+      // Preparar os dados do post
+      const postData: any = {
+        title: processedArticle.title,
+        content: formattedContent,
+        excerpt: processedArticle.excerpt,
+        slug: finalSlug,
+        metaTitle: processedArticle.metaTitle,
+        metaDescription: processedArticle.metaDescription,
+        published: true,
+        authorId: adminUser.id,
+        categoryId: newsCategory.id,
+        imageUrl: featuredImage || null,
+      };
+      
+      // Adicionar keywords se disponível
+      if (processedArticle.keywords && processedArticle.keywords.length > 0) {
+        postData.keywords = processedArticle.keywords;
+      }
+      
       const post = await prisma.post.create({
-        data: {
-          title: processedArticle.title,
-          content: formattedContent,
-          excerpt: processedArticle.excerpt,
-          slug: finalSlug,
-          metaTitle: processedArticle.metaTitle,
-          metaDescription: processedArticle.metaDescription,
-          published: true,
-          authorId: adminUser.id,
-          categoryId: newsCategory.id,
-          imageUrl: featuredImage || null,
-        }
+        data: postData
       });
 
       // Atualiza o status do artigo scrapado
+      const updateData: any = { 
+        status: 'PROCESSED',
+        processedAt: new Date(),
+        postId: post.id,
+      };
+      
+      if (processedArticle.hashtags && processedArticle.hashtags.length > 0) {
+        updateData.hashtags = processedArticle.hashtags;
+      }
+      
+      if (processedArticle.keywords && processedArticle.keywords.length > 0) {
+        updateData.keywords = processedArticle.keywords;
+      }
+      
       await prisma.scrapedArticle.update({
         where: { id: articleId },
-        data: { 
-          status: 'PROCESSED',
-          processedAt: new Date(),
-          postId: post.id,
-          // @ts-ignore - O campo hashtags foi adicionado ao modelo mas pode não estar atualizado no Prisma client
-          hashtags: processedArticle.hashtags || []
-        }
+        data: updateData
       });
 
       // Envia notificação para o canal do Telegram

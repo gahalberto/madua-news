@@ -87,7 +87,9 @@ async function processArticle(articleId: string) {
     4. Não omita informações importantes do original
     5. Use parágrafos para separar o conteúdo e facilitar a leitura
     6. O conteúdo deve ter pelo menos 500 caracteres
-    7. Retorne APENAS o JSON como resposta, sem nenhum texto adicional
+    7. Escolha 10 hashtags relevantes para o assunto do artigo, em português
+    8. Identifique 5 palavras-chave principais relacionadas ao artigo
+    9. Retorne APENAS o JSON como resposta, sem nenhum texto adicional
     
     TÍTULO ORIGINAL: ${article.title}
     
@@ -102,7 +104,9 @@ async function processArticle(articleId: string) {
       "excerpt": "Resumo do artigo em português (150-200 caracteres)",
       "content": "Conteúdo completo em português, separado em parágrafos. Deve conter toda a informação do original, mas em português.",
       "metaTitle": "Título SEO (até 60 caracteres)",
-      "metaDescription": "Descrição SEO (até 160 caracteres)"
+      "metaDescription": "Descrição SEO (até 160 caracteres)",
+      "hashtags": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5", "hashtag6", "hashtag7", "hashtag8", "hashtag9", "hashtag10"],
+      "keywords": ["palavra-chave1", "palavra-chave2", "palavra-chave3", "palavra-chave4", "palavra-chave5"]
     }
     
     LEMBRE-SE: O campo "content" deve conter TODO o conteúdo traduzido, não apenas um resumo.
@@ -162,6 +166,42 @@ async function processArticle(articleId: string) {
       processedArticle.content = processedArticle.content || contentWithLocalImages;
       processedArticle.metaTitle = processedArticle.metaTitle || processedArticle.title.substring(0, 60);
       processedArticle.metaDescription = processedArticle.metaDescription || processedArticle.excerpt.substring(0, 160);
+      processedArticle.hashtags = processedArticle.hashtags || [];
+      processedArticle.keywords = processedArticle.keywords || [];
+      
+      // Garantir que temos 10 hashtags
+      if (processedArticle.hashtags.length < 10) {
+        console.warn(`Número insuficiente de hashtags (${processedArticle.hashtags.length}). Completando até 10...`);
+        // Completar com hashtags genéricas baseadas no título se faltar
+        const titleWords = processedArticle.title.split(' ')
+          .filter((word: string) => word.length > 3)
+          .map((word: string) => word.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+        
+        while (processedArticle.hashtags.length < 10 && titleWords.length > 0) {
+          const word = titleWords.shift();
+          if (word && !processedArticle.hashtags.includes(word)) {
+            processedArticle.hashtags.push(word);
+          }
+        }
+        
+        // Se ainda precisar completar
+        const defaultHashtags = ['noticia', 'brasil', 'internacional', 'informacao', 'atualidade', 'mundo', 'acontecimento', 'maduanews', 'atualizacao', 'destaque'];
+        let i = 0;
+        while (processedArticle.hashtags.length < 10 && i < defaultHashtags.length) {
+          if (!processedArticle.hashtags.includes(defaultHashtags[i])) {
+            processedArticle.hashtags.push(defaultHashtags[i]);
+          }
+          i++;
+        }
+      }
+      
+      // Garantir que temos pelo menos 5 palavras-chave
+      if (processedArticle.keywords.length < 5) {
+        console.warn(`Número insuficiente de palavras-chave (${processedArticle.keywords.length}). Completando até 5...`);
+        // Usar hashtags como fonte de palavras-chave se necessário
+        const keywordsFromHashtags = processedArticle.hashtags.slice(0, 5 - processedArticle.keywords.length);
+        processedArticle.keywords = [...processedArticle.keywords, ...keywordsFromHashtags];
+      }
       
       if (!processedArticle.content || processedArticle.content.length < 10) {
         throw new Error("Conteúdo traduzido está vazio ou muito curto");
@@ -342,31 +382,47 @@ async function processArticle(articleId: string) {
     console.log(`Imagem principal: ${featuredImage || 'Não encontrada'}`);
 
     // Cria o post no blog
+    const postObj: any = {
+      title: processedArticle.title,
+      content: formattedContent,
+      excerpt: processedArticle.excerpt,
+      slug: finalSlug,
+      metaTitle: processedArticle.metaTitle,
+      metaDescription: processedArticle.metaDescription,
+      published: true,
+      authorId: adminUser.id,
+      categoryId: newsCategory.id,
+      imageUrl: featuredImage || null,
+    };
+    
+    if (processedArticle.keywords) {
+      postObj.keywords = processedArticle.keywords;
+    }
+    
     const post = await prisma.post.create({
-      data: {
-        title: processedArticle.title,
-        content: formattedContent,
-        excerpt: processedArticle.excerpt,
-        slug: finalSlug,
-        metaTitle: processedArticle.metaTitle,
-        metaDescription: processedArticle.metaDescription,
-        published: true,
-        authorId: adminUser.id,
-        categoryId: newsCategory.id,
-        imageUrl: featuredImage || null,
-      }
+      data: postObj
     });
 
     console.log(`Post criado com ID: ${post.id} - Título: ${post.title}`);
 
     // Atualiza o status do artigo scrapado
+    const articleUpdate: any = { 
+      status: 'PROCESSED',
+      processedAt: new Date(),
+      postId: post.id,
+    };
+    
+    if (processedArticle.hashtags) {
+      articleUpdate.hashtags = processedArticle.hashtags;
+    }
+    
+    if (processedArticle.keywords) {
+      articleUpdate.keywords = processedArticle.keywords;
+    }
+    
     await prisma.scrapedArticle.update({
       where: { id: articleId },
-      data: { 
-        status: 'PROCESSED',
-        processedAt: new Date(),
-        postId: post.id
-      }
+      data: articleUpdate
     });
 
     // Envia notificação para o canal do Telegram

@@ -221,6 +221,7 @@ model Post {
   published       Boolean          @default(false)
   views           Int              @default(0)
   authorId        String
+  keywords        String[]         @default([]) // Palavras-chave para SEO
   author          User             @relation(fields: [authorId], references: [id])
   category        Category?        @relation(fields: [categoryId], references: [id])
   comments        Comment[]
@@ -457,6 +458,7 @@ model ScrapedArticle {
   createdAt    DateTime  @default(now())
   processedAt  DateTime?
   hashtags     String[]  @default([]) // Armazena as hashtags geradas pela DeepSeek API
+  keywords     String[]  @default([]) // Palavras-chave para SEO
 
   // Referência ao Post após processamento
   postId String?
