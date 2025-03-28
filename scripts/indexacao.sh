@@ -4,9 +4,12 @@
 # Uso: bash scripts/indexacao.sh [tipo] [limite]
 # Exemplo: bash scripts/indexacao.sh posts 10
 
-# Carregar variáveis de ambiente
+# Carregar variáveis de ambiente de forma segura
 if [ -f .env ]; then
-  export $(grep -v '^#' .env | xargs)
+  # Ao invés de usar export com xargs, vamos usar source diretamente
+  set -a
+  source .env
+  set +a
 fi
 
 # Verificar se python está instalado

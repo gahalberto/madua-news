@@ -45,8 +45,21 @@ class RoboIndexacao:
         # Configurações para o Google Indexing API
         self.google_indexing_email = os.getenv("GOOGLE_INDEXING_CLIENT_EMAIL")
         self.google_indexing_key = os.getenv("GOOGLE_INDEXING_PRIVATE_KEY")
+        
+        # Tratamento aprimorado da chave privada
         if self.google_indexing_key:
-            self.google_indexing_key = self.google_indexing_key.replace("\\n", "\n")
+            # Garantir que a chave tenha as quebras de linha corretas
+            self.google_indexing_key = self.google_indexing_key.replace('\\n', '\n')
+            
+            # Verificar se a chave começa e termina corretamente
+            if not self.google_indexing_key.startswith('-----BEGIN PRIVATE KEY-----'):
+                logger.warning("Formato da chave privada parece incorreto (início)")
+            if not self.google_indexing_key.strip().endswith('-----END PRIVATE KEY-----'):
+                logger.warning("Formato da chave privada parece incorreto (fim)")
+                
+            logger.info(f"Chave privada carregada, tamanho: {len(self.google_indexing_key)} caracteres")
+        else:
+            logger.warning("Chave privada não encontrada nas variáveis de ambiente")
         
         # URL da API do Google Indexing
         self.indexing_endpoint = "https://indexing.googleapis.com/v3/urlNotifications:publish"
@@ -71,21 +84,36 @@ class RoboIndexacao:
             return
             
         try:
-            self.credentials = service_account.Credentials.from_service_account_info(
-                {
+            # Tentar criar as credenciais usando um arquivo temporário em vez de dicionário
+            # Isso pode resolver problemas de formatação da chave
+            import tempfile
+            
+            # Criar um arquivo de credenciais temporário
+            with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+                json_content = {
                     "type": "service_account",
                     "project_id": "madua-454823",
-                    "private_key_id": "5c0da9131a46",  # Substituir pelo ID real se necessário
+                    "private_key_id": "5c0da9131a46", 
                     "private_key": self.google_indexing_key,
                     "client_email": self.google_indexing_email,
-                    "client_id": "114927467549897077562",  # Substituir pelo ID real se necessário
+                    "client_id": "114927467549897077562",
                     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                     "token_uri": "https://oauth2.googleapis.com/token",
                     "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
                     "client_x509_cert_url": f"https://www.googleapis.com/robot/v1/metadata/x509/{self.google_indexing_email}"
-                },
+                }
+                json.dump(json_content, temp_file)
+                temp_file_path = temp_file.name
+            
+            # Carregar credenciais do arquivo temporário
+            logger.info(f"Carregando credenciais do arquivo temporário: {temp_file_path}")
+            self.credentials = service_account.Credentials.from_service_account_file(
+                temp_file_path,
                 scopes=["https://www.googleapis.com/auth/indexing"]
             )
+            
+            # Remover o arquivo temporário após o uso
+            os.unlink(temp_file_path)
             
             # Atualizar token se necessário
             if not self.credentials.valid:
